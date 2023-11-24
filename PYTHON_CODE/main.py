@@ -16,7 +16,7 @@ class PayloadFlightControl:
         # TODO: replace with actual real function from DataCollection.py
         # combined_data = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
         
-        return "65535,32768,1023,512"
+        return "65535,32768,1023,512" # just for testing
 
     def start_collection(self):
         # TODO: this loop should start data collection. 
@@ -34,10 +34,11 @@ class PayloadFlightControl:
                     file.write(data_to_write)
 
                     # Change motor angle here
-                    # Assuming 'perform_steps' changes the motor angle and 'num_steps' is the number of steps for desired angle change
 
                     # TODO: the motor needs to move here after we collected the data
-                    self.motor.move(1000, 120)  # Move 1000 steps in 120 seconds
+                    self.motor.enable_motor(True)
+                    self.motor.move() # perform one step in the direction we need
+                    self.motor.enable_motor(False)
                     
                 # Optional: a small delay between each outer loop iteration
                 time.sleep(1)
