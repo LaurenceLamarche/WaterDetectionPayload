@@ -11,6 +11,8 @@ class Motor:
         self.MS2_pin = machine.Pin(6, machine.Pin.OUT)
         self.MS3_pin = machine.Pin(5, machine.Pin.OUT)
 
+        #TODO: Define the pins connected to the encoder
+
         # Set initial motor state
         self.enable_motor(False)
         self.set_step_size(False, False)
@@ -36,6 +38,11 @@ class Motor:
         # Set the direction
         self.dir_pin.value(direction)
 
+    #TODO: finish this function once the encoder is connected
+    def get_grating_angle(self):
+
+        print("this function is not yet defined")
+
     def move_half_turn(self, num_steps, total_time):
         # Calculate the delay based on the total time and the number of steps
         delay = total_time / num_steps
@@ -53,14 +60,10 @@ class Motor:
         self.enable_motor(False)
 
     def move(self):
-        # we now want the delay to be fixed 
-
+        # we use the fixed delay
         print("Performing move...")
         self.step_pin.on()
-        time.sleep(self.delay)  # Half the delay for the step on time
+        time.sleep(self.delay)  # ensure it doesn't move so fast
         self.step_pin.off()
-        time.sleep(self.delay)  # Half the delay for the step off time
-
-        # Ensure that the stepper motor is stopped when done
-        self.step_pin.off()
-        self.enable_motor(False)
+        time.sleep(self.delay)  
+        #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
