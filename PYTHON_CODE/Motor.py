@@ -67,3 +67,8 @@ class Motor:
         self.step_pin.off()
         time.sleep(self.delay)  
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
+
+#Use this for testing
+while true:
+    motor = Motor()
+    motor.move_half_turn(10000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.
