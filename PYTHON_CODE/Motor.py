@@ -1,6 +1,32 @@
 import machine
 import time
 
+class Encoder:
+    def __init__(self, clk_pin, dt_pin):
+        self.clk_pin = machine.Pin(clk_pin, machine.Pin.IN, machine.Pin.PULL_DOWN)
+        self.dt_pin = machine.Pin(dt_pin, machine.Pin.IN, machine.Pin.PULL_DOWN)
+        self.counter = 0
+        self.clk_last_state = self.clk_pin.value()
+
+    def update(self):
+        clk_state = self.clk_pin.value()
+        dt_state = self.dt_pin.value()
+
+        if clk_state != self.clk_last_state:
+            if dt_state != clk_state:
+                self.counter += 1
+            else:
+                self.counter -= 1
+            self.clk_last_state = clk_state
+        return self.counter
+
+    def get_count(self):
+        return self.counter
+
+    def reset(self):
+        self.counter = 0
+
+
 class Motor:
     def __init__(self):
         # Define the pins connected to the A4988 driver
@@ -11,7 +37,9 @@ class Motor:
         self.MS2_pin = machine.Pin(6, machine.Pin.OUT)
         self.MS3_pin = machine.Pin(5, machine.Pin.OUT)
 
-        #TODO: Define the pins connected to the encoder
+        #TODO: Verify the pins connected to the encoder
+        # Initialize Encoder
+        self.encoder = Encoder(clk_pin=17, dt_pin=18) 
 
         # Set initial motor state
         self.enable_motor(False)
@@ -38,10 +66,10 @@ class Motor:
         # Set the direction
         self.dir_pin.value(direction)
 
-    #TODO: finish this function once the encoder is connected
+    #TODO: test this
     def get_grating_angle(self):
-
-        print("this function is not yet defined")
+        #TODO: might need additional manipulations to convert to an angle
+        return self.encoder.get_count()
 
     def move_half_turn(self, num_steps, total_time):
         # Calculate the delay based on the total time and the number of steps
@@ -54,7 +82,7 @@ class Motor:
             time.sleep(delay / 2)  # Half the delay for the step on time
             self.step_pin.off()
             time.sleep(delay / 2)  # Half the delay for the step off time
-
+            self.encoder.update()
         # Ensure that the stepper motor is stopped when done
         self.step_pin.off()
         self.enable_motor(False)
@@ -66,6 +94,7 @@ class Motor:
         time.sleep(self.delay)  # ensure it doesn't move so fast
         self.step_pin.off()
         time.sleep(self.delay)  
+        self.encoder.update()
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
 
 #Use this for testing
