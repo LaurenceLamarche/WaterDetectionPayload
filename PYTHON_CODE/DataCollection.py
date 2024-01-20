@@ -1,120 +1,66 @@
-from machine import ADC, Pin
+import machine
 import time
+import uos
+from Motor import Motor
 
-# Initialize ADC for thermistors (e.g., GP28 is ADC2, GP29 is ADC3)
-thermistor_1 = ADC(28)
-thermistor_2 = ADC(29)
-# Using a potentiometer or similar analog sensor for the angle, I would use an ADC like this:
-motor_angle_adc = ADC(26)  # Assuming the angle sensor is connected to GP26
-# Initialize ADC for the photodetector (e.g., GP27 is ADC1)
-photodetector_adc = ADC(27)
+class DataCollection:
 
-# Define the pins connected to the A4988 driver
-step_pin = machine.Pin(2, machine.Pin.OUT)  # Replace 2 with your actual GPIO pin
-dir_pin = machine.Pin(4, machine.Pin.OUT)   # Replace 4 with your actual GPIO pin
-
-# Set the direction (0 for one direction, 1 for the other)
-dir_pin.value(0)  # Change to 1 if you want to reverse the direction
-
-# Define the number of steps for a full revolution (may vary with your motor)
-steps_per_rev = 20000
-
-# Define the delay between steps (adjust for your desired speed)
-delay = 0.01  # Adjust for your motor and application
+    def __init__(self):
+        # Initialize Motor instance
+        self.motor = Motor()
+        # self.motor = [] # TESTING ON VS CODE
+        # Set up any other initializations if necessary
+        # TODO: integrate the Pi communicator class (or something) for code that calls other pico
+        # TODO: integrate the LEDcommunicator class (or something) for code that controls LEDs 
+        #       (that might be done in PiCommunicator class)
 
 
-# Function to perform a specified number of steps
-def perform_steps(num_steps):
-    for _ in range(num_steps):
-        step_pin.on()
-        time.sleep_us(2)  # Adjust if needed
-        step_pin.off()
-        time.sleep_us(2)  # Adjust if needed
+    # Function to combine sensor readings into a single data packet
+    def combine_sensor_readings(self):
+        # Read sensor values
+        # TODO: replace with actual real function from DataCollection.py
+        # TODO: NEED TO CALL DataCollection.py
+        # combined_data = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
+        
+        return "65535,32768,1023,512" # just for testing
 
-  
-# Function to read and calculate the temperature from a thermistor
-def read_temperature_from_thermistor(adc):
-    # Constants for the thermistor and ADC
-    R0 = 10000  # Resistance of the thermistor at 25 degrees Celsius (10k Ohms)
-    T0 = 298.15  # Reference temperature (25°C in Kelvin)
-    B = 3435  # The Beta value (from the datasheet)
-    R_series = 10000  # The value of the series resistor (10k Ohms)
-    ADC_max = 4095  # The maximum value of the ADC (12-bit ADC)
-    
-    ADC_value = adc.read_u16() >> 4  # Read the ADC value and convert it to 12-bit
-    if ADC_value == 0:
-        ADC_value = 1  # Prevent division by zero
+    def start_collection(self):
+        # TODO: this loop should start data collection. 
+        self.motor.enable_motor(True)
+            # Open (or create) a file to store the data
+        with open('sensor_data.txt', 'w') as file:
+            for loop_number in range(1, 4):  # Outer loop, runs three times
+                for step_count in range(4000):  # Inner loop, runs 4000 times for each outer loop
+                    # Get combined sensor reading
+                    combined_data = self.combine_sensor_readings()
 
-    # Calculate the thermistor resistance
-    R = R_series * ((65535 / ADC_value) - 1)
+                    # Append the loop number to the data
+                    data_to_write = f"{loop_number},{combined_data}\n"
 
-    # Calculate the temperature in Kelvin using the B-value equation
-    T_inv = (1/T0) + (1/B) * math.log(R/R0)
-    T_kelvin = 1 / T_inv
+                    # Write the data to the file
+                    file.write(data_to_write)
 
-    # Convert the temperature to Celsius
-    T_celsius = T_kelvin - 273.15
+                    # TODO: the motor needs to move one step after we collected the data
+                    self.motor.move() # perform one step in the direction we need
+                    # TODO: this should be in a try/catch block to catch any errors in the move.
+                    
+                # Optional: a small delay between each outer loop iteration
+                time.sleep(1)
+                # TODO: call the calibration algorithm HERE
+        self.motor.enable_motor(False)    
+        print("One full sample complete for all LEDs. Data stored in 'sensor_data.txt'.")
 
-    return T_celsius
+def main():
+    # TODO: this loop should listen for ground commands, and either 
+    # START DATA COLLECTION
+    # STOP DATA COLLECTION
+    # FORCE CALIBRATE
+    # GET DATA
 
-# Function to read the motor angle value
-# If you're using a potentiometer or similar analog sensor for the angle, you would use an ADC like this:
-motor_angle_adc = ADC(26)  # Assuming the angle sensor is connected to GP26
+    print("The payload control software has been started")
+    payload_control = DataCollection()
+    payload_control.start_collection()
 
-def read_motor_angle():
-    # Read the ADC value
-    # value = motor_angle_adc.read_u16() >> 4  # Converts to 12-bit
-    value = motor_angle_adc.read_u16()
-    
-    # Convert the ADC value to an angle here. TODO: VERIFY THIS
-    # If the potentiometer gives 0 to 3.3V over 0 to 270 degrees:
-    # angle = (value / 4095.0) * 270.0  # Scale the 12-bit ADC value to degrees
-    angle = (value / 65535.0) * 270.0  # Scale the 16-bit ADC value to degrees
-    return angle
-
-# Function to read the photodetector value
-def read_photodetector():
-    # Read the 16-bit value from the photodetector ADC
-    # value = photodetector_adc.read_u16() >> 4  # Converts to 12-bit
-    value = photodetector_adc.read_u16()
-    
-    # TODO: convert this to a meaningful measurement depending on photodetector's characteristics
-    return value
-
-# Function to combine sensor readings into a single data packet
-def combine_sensor_readings():
-    # Read sensor values
-    temperature_1 = read_temperature_from_thermistor(thermistor_1)
-    temperature_2 = read_temperature_from_thermistor(thermistor_2)
-    photodetector_value = read_photodetector()
-    motor_angle = read_motor_angle()
-
-    # Combine sensor readings
-    # Assuming temperatures can fit in 12 bits, photodetector in 16 bits, and motor angle in 16 bits 
-    # Now using 64-bit integer to fit 56 bits of data
-    combined_data = (photodetector_value << 40) | (motor_angle << 24) | (temperature_1 << 12) | temperature_2
-    combined_data_string = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
-    
-    # This is now using a 64-bit integer to fit 56 bits of data -- TODO: ensure this type wont get converted on other systems
-    # We can choose which data we need
-    return combined_data_string
-
-
-# Just testing, for now
-while True:
-    #just testing, we don't need these if we have the combine_sensor_readings function working
-    temp1 = read_temperature_from_thermistor(thermistor_1)
-    temp2 = read_temperature_from_thermistor(thermistor_2)
-    motor_angle = read_motor_angle()
-    photodetector_value = read_photodetector()
-    
-    print(f"Temperature 1: {temp1} C")
-    print(f"Temperature 2: {temp2} C")
-    print(f"Motor Angle: {motor_angle} degrees")
-    print(f"Photodetector Value: {photodetector_value}")
-    time.sleep(2)  # Sleep for 3 seconds before reading again
-    
-    #if all the previous functions work, test that this has the predicted features.
-    combined_data = combine_sensor_readings()
-    print(f"Combined data: {combined_data}")
-    
+# Call the main function
+if __name__ == "__main__":
+    main()

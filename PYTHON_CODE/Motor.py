@@ -2,11 +2,12 @@ import machine
 import time
 
 class Encoder:
-    def __init__(self, clk_pin, dt_pin):
+    def __init__(self, clk_pin, dt_pin, cpr):
         self.clk_pin = machine.Pin(clk_pin, machine.Pin.IN, machine.Pin.PULL_DOWN)
         self.dt_pin = machine.Pin(dt_pin, machine.Pin.IN, machine.Pin.PULL_DOWN)
         self.counter = 0
         self.clk_last_state = self.clk_pin.value()
+        self.cpr = cpr
 
     def update(self):
         clk_state = self.clk_pin.value()
@@ -25,6 +26,10 @@ class Encoder:
 
     def reset(self):
         self.counter = 0
+    
+    def get_angle(self):
+        # Calculate the angle
+        return (self.get_count() / self.cpr) * 360
 
 
 class Motor:
@@ -37,9 +42,9 @@ class Motor:
         self.MS2_pin = machine.Pin(6, machine.Pin.OUT)
         self.MS3_pin = machine.Pin(5, machine.Pin.OUT)
 
-        #TODO: Verify the pins connected to the encoder
+        #TODO: Verify the pins connected to the encoder AND the cpr value
         # Initialize Encoder
-        self.encoder = Encoder(clk_pin=17, dt_pin=18) 
+        self.encoder = Encoder(clk_pin=17, dt_pin=18, cpr=400)  
 
         # Set initial motor state
         self.enable_motor(False)
@@ -68,8 +73,7 @@ class Motor:
 
     #TODO: test this
     def get_grating_angle(self):
-        #TODO: might need additional manipulations to convert to an angle
-        return self.encoder.get_count()
+        return self.encoder.get_angle()
 
     def move_half_turn(self, num_steps, total_time):
         # Calculate the delay based on the total time and the number of steps
