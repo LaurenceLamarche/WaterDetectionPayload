@@ -1,5 +1,6 @@
 from machine import ADC, Pin
 import time
+import math
 
 # Initialize ADC for thermistors (e.g., GP28 is ADC2, GP29 is ADC3)
 thermistor_1 = ADC(28)
@@ -10,16 +11,16 @@ motor_angle_adc = ADC(26)  # Assuming the angle sensor is connected to GP26
 photodetector_adc = ADC(27)
 
 # Define the pins connected to the A4988 driver
-step_pin = machine.Pin(2, machine.Pin.OUT)  # Replace 2 with your actual GPIO pin
-dir_pin = machine.Pin(4, machine.Pin.OUT)   # Replace 4 with your actual GPIO pin
+step_pin = machine.Pin(2, machine.Pin.OUT)  # Replace 2 with actual GPIO pin
+dir_pin = machine.Pin(4, machine.Pin.OUT)   # Replace 4 with actual GPIO pin
 
 # Set the direction (0 for one direction, 1 for the other)
 dir_pin.value(0)  # Change to 1 if you want to reverse the direction
 
-# Define the number of steps for a full revolution (may vary with your motor)
+# Define the number of steps for a full revolution (verify this)
 steps_per_rev = 20000
 
-# Define the delay between steps (adjust for your desired speed)
+# Define the delay between steps (adjust for desired speed)
 delay = 0.01  # Adjust for your motor and application
 
 
@@ -58,11 +59,11 @@ def read_temperature_from_thermistor(adc):
     return T_celsius
 
 # Function to read the motor angle value
-motor_angle_adc = ADC(26)  # Assuming the angle sensor is connected to GP26
 
 def read_motor_angle():
     # Read the ADC value
     # value = motor_angle_adc.read_u16() >> 4  # Converts to 12-bit
+    # TODO: this should be read from encoder.
     value = motor_angle_adc.read_u16()
     
     # Convert the ADC value to an angle here. TODO: VERIFY THIS

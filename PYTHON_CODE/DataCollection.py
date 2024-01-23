@@ -18,11 +18,13 @@ class DataCollection:
     # Function to combine sensor readings into a single data packet
     def combine_sensor_readings(self):
         # Read sensor values
-        # TODO: replace with actual real function from DataCollection.py
-        # TODO: NEED TO CALL DataCollection.py
+        # TODO: replace with actual real functions from DataCollectionTest.py
         # combined_data = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
         
         return "65535,32768,1023,512" # just for testing
+    
+    def get_grating_angle(self):
+        return self.motor.get_grating_angle()
 
     def start_collection(self):
         # TODO: this loop should start data collection. 
@@ -50,16 +52,18 @@ class DataCollection:
         self.motor.enable_motor(False)    
         print("One full sample complete for all LEDs. Data stored in 'sensor_data.txt'.")
 
+# FOR TESTING ONLY. THIS CLASS SHOULD NOT HAVE A MAIN LOOP EVENTUALLY. 
 def main():
-    # TODO: this loop should listen for ground commands, and either 
-    # START DATA COLLECTION
-    # STOP DATA COLLECTION
-    # FORCE CALIBRATE
-    # GET DATA
-
     print("The payload control software has been started")
     payload_control = DataCollection()
-    payload_control.start_collection()
+    #payload_control.start_collection()
+    grating_angle = payload_control.get_grating_angle()
+    print("The current motor angle is: {:.2f}".format(grating_angle))
+    # testing if moving the motor updates the encoder value
+    payload_control.motor.move()
+    new_grating_angle = payload_control.get_grating_angle()
+    print("The current motor angle is: {:.2f}".format(new_grating_angle))
+
 
 # Call the main function
 if __name__ == "__main__":

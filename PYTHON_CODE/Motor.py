@@ -29,6 +29,8 @@ class Encoder:
     
     def get_angle(self):
         # Calculate the angle
+        print("getting grating angle from the Encoder...")
+        print("current count is: ", self.get_count())
         return (self.get_count() / self.cpr) * 360
 
 
@@ -37,14 +39,14 @@ class Motor:
         # Define the pins connected to the A4988 driver
         self.step_pin = machine.Pin(3, machine.Pin.OUT)
         self.dir_pin = machine.Pin(2, machine.Pin.OUT)
-        self.enable_pin = machine.Pin(14, machine.Pin.OUT)
+        self.enable_pin = machine.Pin(4, machine.Pin.OUT)
         self.MS1_pin = machine.Pin(7, machine.Pin.OUT)
         self.MS2_pin = machine.Pin(6, machine.Pin.OUT)
         self.MS3_pin = machine.Pin(5, machine.Pin.OUT)
 
-        #TODO: Verify the pins connected to the encoder AND the cpr value
+        #TODO: Verify these are the right pins
         # Initialize Encoder
-        self.encoder = Encoder(clk_pin=17, dt_pin=18, cpr=400)  
+        self.encoder = Encoder(clk_pin=24, dt_pin=25, cpr=300)  
 
         # Set initial motor state
         self.enable_motor(False)
@@ -73,6 +75,7 @@ class Motor:
 
     #TODO: test this
     def get_grating_angle(self):
+        print("getting grating angle from the Motor...")
         return self.encoder.get_angle()
 
     def move_half_turn(self, num_steps, total_time):
@@ -84,6 +87,7 @@ class Motor:
         for _ in range(num_steps):
             self.step_pin.on()
             time.sleep(delay / 2)  # Half the delay for the step on time
+            print("moving")
             self.step_pin.off()
             time.sleep(delay / 2)  # Half the delay for the step off time
             self.encoder.update()
@@ -102,6 +106,6 @@ class Motor:
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
 
 #Use this for testing
-while true:
+while True:
     motor = Motor()
     motor.move_half_turn(10000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.
