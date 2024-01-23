@@ -52,7 +52,7 @@ class Motor:
         self.enable_motor(False)
         self.set_step_size(False, False)
         self.set_direction(True)
-        self.delay = 0.0001 # Verify that this is ok
+        self.delay = 0.012 # TODO: Optimize this
 
         # Define the number of steps for a full revolution (may vary with your motor)
         self.steps_per_rev = 20000
@@ -98,14 +98,16 @@ class Motor:
     def move(self):
         # we use the fixed delay
         print("Performing move...")
+        
         self.step_pin.on()
-        time.sleep(self.delay)  # ensure it doesn't move so fast
+        time.sleep(self.delay/2)  # ensure it doesn't move so fast
         self.step_pin.off()
-        time.sleep(self.delay)  
+        time.sleep(self.delay/2)  
         self.encoder.update()
+
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
 
 #Use this for testing
-while True:
-    motor = Motor()
-    motor.move_half_turn(10000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.
+#while True:
+#    motor = Motor()
+#    motor.move_half_turn(10000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.

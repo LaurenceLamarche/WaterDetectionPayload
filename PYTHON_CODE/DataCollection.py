@@ -30,8 +30,9 @@ class DataCollection:
         # TODO: this loop should start data collection. 
         self.motor.enable_motor(True)
             # Open (or create) a file to store the data
-        with open('sensor_data.txt', 'w') as file:
+        with open('sensor_data1.txt', 'w') as file:
             for loop_number in range(1, 4):  # Outer loop, runs three times
+                #TODO: calibration needs to be here
                 for step_count in range(4000):  # Inner loop, runs 4000 times for each outer loop
                     # Get combined sensor reading
                     combined_data = self.combine_sensor_readings()
@@ -47,7 +48,7 @@ class DataCollection:
                     # TODO: this should be in a try/catch block to catch any errors in the move.
                     
                 # Optional: a small delay between each outer loop iteration
-                time.sleep(1)
+                #time.sleep(0.001)
                 # TODO: call the calibration algorithm HERE
         self.motor.enable_motor(False)    
         print("One full sample complete for all LEDs. Data stored in 'sensor_data.txt'.")
@@ -56,13 +57,14 @@ class DataCollection:
 def main():
     print("The payload control software has been started")
     payload_control = DataCollection()
-    #payload_control.start_collection()
-    grating_angle = payload_control.get_grating_angle()
-    print("The current motor angle is: {:.2f}".format(grating_angle))
+    payload_control.start_collection()
+    
+    #grating_angle = payload_control.get_grating_angle()
+    #print("The current motor angle is: {:.4f}".format(grating_angle))
     # testing if moving the motor updates the encoder value
-    payload_control.motor.move()
-    new_grating_angle = payload_control.get_grating_angle()
-    print("The current motor angle is: {:.2f}".format(new_grating_angle))
+    #payload_control.motor.move()
+    #new_grating_angle = payload_control.get_grating_angle()
+    #print("The current motor angle is: {:.4f}".format(new_grating_angle))
 
 
 # Call the main function
