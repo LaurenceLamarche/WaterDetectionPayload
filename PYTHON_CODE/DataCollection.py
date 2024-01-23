@@ -54,10 +54,10 @@ class DataCollection:
         print("One full sample complete for all LEDs. Data stored in 'sensor_data.txt'.")
 
 # FOR TESTING ONLY. THIS CLASS SHOULD NOT HAVE A MAIN LOOP EVENTUALLY. 
-def main():
-    print("The payload control software has been started")
-    payload_control = DataCollection()
-    payload_control.start_collection()
+#def main():
+#    print("The payload control software has been started")
+#    payload_control = DataCollection()
+#    payload_control.start_collection()
     
     #grating_angle = payload_control.get_grating_angle()
     #print("The current motor angle is: {:.4f}".format(grating_angle))
@@ -68,5 +68,5 @@ def main():
 
 
 # Call the main function
-if __name__ == "__main__":
-    main()
+#if __name__ == "__main__":
+#    main()
