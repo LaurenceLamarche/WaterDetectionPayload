@@ -1,4 +1,10 @@
-#motor pico
+# motor pico
+# =========================================== #
+# This main method is responsible for listening
+# for IR remote commands:
+# 2 = Start Data Collection (move the motor)
+# TODO: Add more commands here
+# =========================================== #
 
 import time
 import utime
@@ -52,7 +58,8 @@ Start = 24
 measure = False
 
 #ADS1115 I2C connection
-ADS = I2C(1, freq=400000, scl=Pin(15), sda=Pin(14))
+#ADS = I2C(1, freq=400000, scl=Pin(15), sda=Pin(14)) # PICO 2 I2C PINS
+ADS = I2C(1, freq=400000, scl=Pin(11), sda=Pin(10)) # PICO 1 12C PINS
 address = 72
 def readConfig():
     ADS.writeto(address, bytearray([1]))
@@ -104,8 +111,12 @@ ir.error_function(print_error)  # Show debug information
 #write(com1, f'off')
 while True:
     
-    #value = readValue()
-    #print("value = ", value, "\tVolts = ",(2.8/23000)*(value-3250))
+    # JUST TESING
+    #value = readValue(0)
+    #print("value = ", value, "\tVolts = ",(2.8/23000)*(value-3250)) # TEST 1 (LAURENCE)
+    #print("value = ", value, "\tVolts = ",value*(4.096*2)/(0xffff)) # TEST 2 (LAURENCE)
+    # JUST TESTING
+    #start Data Collection (move the motor) when 2 is pressed on the remote
     if measure == True:
         a = DataCollection()
         a.start_collection()
