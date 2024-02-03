@@ -1,4 +1,4 @@
-from machine import Pin, UART
+from machine import Pin, UART, I2C
 import time
 from time import sleep, time_ns
 import uos
@@ -14,6 +14,39 @@ class DataCollection:
         self.uart_id = 0
         self.baud_rate = 115200
         self.com1 = UART(self.uart_id, self.baud_rate)
+        #ADS1115 I2C connection
+        
+        self.ADS = I2C(1, freq=400000, scl=Pin(11), sda=Pin(10)) # PICO 1 12C PINS
+        self.address = 72
+        
+    # Functions to read from the ADC
+    def readConfig(self):
+        self.ADS.writeto(self.address, bytearray([1]))
+        result = self.ADS.readfrom(self.address, 2)
+        return result[0]<<8 | result[1]
+
+    def readValue(self, channel):
+        self.ADS.writeto(self.address, bytearray([0]))
+        result = self.ADS.readfrom(self.address, 2)
+        
+        config = self.readConfig()
+        config &= ~(7<<12) & ~(7<<9)
+        config |= (7 & (4+channel))<<12
+        config |= (1<<9) #gain of 4.096 V
+        config |= (1<<15)
+        
+        config = [ int(config>>i & 0xff) for i in (8,0)]
+        self.ADS.writeto(self.address, bytearray([1] + config))
+        
+        config = self.readConfig()
+        while (config & 0x8000) ==0:
+            config = self.readConfig()
+        
+        self.ADS.writeto(self.address, bytearray([0]))
+        result = self.ADS.readfrom(self.address, 2)
+        return result[0]<<8 | result[0]
+    
+    # UART STUFF
 
     def write(self, com1, message:str):
         print(f'sending message: {message}')
@@ -58,7 +91,7 @@ class DataCollection:
 #             print("Received non-UTF-8 data")
 #             return raw_message  # or handle differently
 
-    # Function to combine sensor readings into a single data packet
+    # TEST Function to combine sensor readings into a single data packet
     def combine_sensor_readings(self):
         print(time_ns)
         # Read sensor values
@@ -95,9 +128,9 @@ class DataCollection:
 
     def start_collection(self):
         self.motor.enable_motor(True)
-        self.motor.set_direction(False)#True is CW, False is CCW 
+        self.motor.set_direction(True)#True is CW, False is CCW 
             # Open (or create) a file to store the data
-        with open('photodetector.txt', 'w') as file:
+        with open('vlad_laurence4.txt', 'w') as file:
             for loop_number in range(1, 2):  # Outer loop, runs three times
                 #TODO: calibration needs to be here
                 for step_count in range(5000):  # Inner loop, runs 4000 times for each outer loop
@@ -109,12 +142,17 @@ class DataCollection:
                     #data_to_write = f"{loop_number},{combined_data}\n"
 
                     # Write the data to the file
-                    #file.write(data_to_write)
+                    
                     #time.sleep(0.1)
                     #print("after: "+str(time_ns()))
                     # Move one step after data is collected
-                    self.motor.move() # perform one step in the direction we need
-                    
+                    #self.motor.move() # perform one step in the direction we need
+                    value = self.readValue(0)
+                    print("value = ", value, "\tVolts = ",value*(4.096*2)/(0xffff)) # TEST 2 (LAURENCE)
+                    volts_data = value*(4.096*2)/(0xffff)
+                    #data_to_write = f"{loop_number},{volts_data}\n"
+                    data_to_write = f"{loop_number},{value}\n"
+                    file.write(data_to_write)
                     #print("grating angle is:", self.motor.get_grating_angle())
                     # TODO: this should be in a try/catch block to catch any errors in the move.
                 # Optional: a small delay between each outer loop iteration
@@ -126,8 +164,9 @@ class DataCollection:
 # FOR TESTING ONLY. THIS CLASS SHOULD NOT HAVE A MAIN LOOP EVENTUALLY. 
 #def main():
 #    print("The payload control software has been started")
-#    payload_control = DataCollection()
-#    payload_control.start_collection()
+# FOR TESTING WITHOUT IR RECEIVER
+payload_control = DataCollection()
+payload_control.start_collection()
     
     #grating_angle = payload_control.get_grating_angle()
     #print("The current motor angle is: {:.4f}".format(grating_angle))
