@@ -3,7 +3,7 @@ import time
 from time import sleep, time_ns
 import uos
 
-class DataCollection:
+class DataCollectionTest:
 
     def __init__(self):
         
@@ -106,7 +106,7 @@ class DataCollection:
             print("Received raw data:", response)
             # Handle raw data response here, if necessary
 
-    def start_collection(self):
+    def start_collection_test(self):
         # Open (or create) a file to store the data
         rtc = RTC()
         current_time = rtc.datetime()
