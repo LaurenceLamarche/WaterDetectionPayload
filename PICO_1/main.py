@@ -14,6 +14,7 @@ from machine import Pin, I2C, UART
 from ir_rx.print_error import print_error
 from ir_rx.nec import NEC_8
 from DataCollection import DataCollection
+from IR_remote import IR_remote
 
 # UART pico communication
 uart_id = 0
@@ -53,8 +54,10 @@ def read(com1):
 
 #ir remote pin and values
 pin_ir = Pin(14, Pin.IN)
+
 Stop = 28
 Start = 24
+change_dir = 82
 measure = False
 
 #ADS1115 I2C connection
@@ -97,17 +100,23 @@ def callback(data, addr, ctrl):
         pass
     else:
         print(data)
+        print('hi')
         if data == Start:
             measure = True
             com1.write('photodetector')
             
-        #elif data == Stop:
-            #measure = False
+        elif data == Stop:
+            a.stop = True
+            print(a.stop)
+            
+        elif data == change_dir:
+            a.direction = not a.direction
+            
 ir = NEC_8(pin_ir, callback)  # Instantiate receiver
 ir.error_function(print_error)  # Show debug information
-
+a = DataCollection()
 # Main loop
-
+measure = False
 #write(com1, f'off')
 while True:
     
@@ -115,11 +124,16 @@ while True:
     #value = readValue(0)
     #print("value = ", value, "\tVolts = ",(2.8/23000)*(value-3250)) # TEST 1 (LAURENCE)
     #print("value = ", value, "\tVolts = ",value*(4.096*2)/(0xffff)) # TEST 2 (LAURENCE)
+    #print("value = ", value) # TEST 2 (LAURENCE)
     # JUST TESTING
+    a.start_collection_test()
     #start Data Collection (move the motor) when 2 is pressed on the remote
     if measure == True:
-        a = DataCollection()
+        
+        #a = DataCollection()
         a.start_collection()
+        #a.start_collection_test() # sending data, without motor
+        measure = False
 
 
 
