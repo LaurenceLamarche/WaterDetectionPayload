@@ -115,6 +115,9 @@ def callback(data, addr, ctrl):
 ir = NEC_8(pin_ir, callback)  # Instantiate receiver
 ir.error_function(print_error)  # Show debug information
 a = DataCollection()
+# TODO: JUST TESTING, remove this
+a.start_collection()
+
 # Main loop
 measure = False
 #write(com1, f'off')
@@ -125,8 +128,6 @@ while True:
     #print("value = ", value, "\tVolts = ",(2.8/23000)*(value-3250)) # TEST 1 (LAURENCE)
     #print("value = ", value, "\tVolts = ",value*(4.096*2)/(0xffff)) # TEST 2 (LAURENCE)
     #print("value = ", value) # TEST 2 (LAURENCE)
-    # JUST TESTING
-    a.start_collection_test()
     #start Data Collection (move the motor) when 2 is pressed on the remote
     if measure == True:
         

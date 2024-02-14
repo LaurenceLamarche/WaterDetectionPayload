@@ -80,7 +80,7 @@ class DataCollection:
 
     def write(self, com1, message:str):
         #print(f'sending message: {message}')
-        message = message + '\n'
+        #message = message + '\n'
         com1.write(bytes(message,'utf-8'))
 
     def read(self, com1):
@@ -156,7 +156,7 @@ class DataCollection:
             #print("Received raw data:", response)
             # Handle raw data response here, if necessary
             
-    def start_collection_test(self):
+    def start_collection(self):
         # SET FILENAME FOR PICO BACKUP
         rtc = RTC()
         current_time = rtc.datetime()
@@ -168,14 +168,14 @@ class DataCollection:
         # ENABLE THE MOTOR, Set initial direction to clockwise
         current_dir = self.direction
         self.motor.enable_motor(True)
-        self.motor.set_direction(False)#True is CW, False is CCW
+        self.motor.set_direction(True)#True is CW, False is CCW
         
         # OPEN (OR CREATE) THE BACKUP FILE
         
         with open(filename, 'w') as file:
-            for led_number in range(1, 2):  # Outer loop, (1, 4) runs three times (once per LED)
-                for step_count in range(10000):  # Inner loop, runs 4000 times for each outer loop
-                    
+            for led_number in range(1, 3):  # Outer loop, (1, 4) runs three times (once per LED)
+                for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
+                #for step_count in range(4576):    
                     # CHECK TO SEE IF DIRECTION CHANGED
                     if current_dir != self.direction:
                         self.motor.set_direction(self.direction)
@@ -188,7 +188,7 @@ class DataCollection:
                     # Print data every 100 steps
                     if step_count % 100 == 0:
                         print("value = ", value, "\tVolts = ", volts_data)
-                    data_to_write = f"{led_number}, {step_count}, {volts_data}"
+                    data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                     file.write(data_to_write)
                     
                     # UART COMS
@@ -196,15 +196,19 @@ class DataCollection:
                     
                     # MOVE MOTOR ONE STEP
                     self.motor.move() # perform one step in the direction we need
-                    
+                    #grating_angle = self.get_grating_angle()
+                    #print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
                     # CHECK FOR STOP COMMAND
                     if self.stop == True:
                         self.stop = False
                         break
                 # Optional: a small delay between each outer loop iteration
                 time.sleep(0.1)
-                self.write(self.com1, "0, 0, 0") # Send confirmation when done with one LED
-            
+                self.write(self.com1, "0, 0, 0\n") # Send confirmation when done with one LED
+                
+                ## JUST FOR TESTING WITH ONE LED
+                self.motor.set_direction(False)#True is CW, False is CCW
+                
             # Wait for confirmation message
             confirmation_received = False
             print("Data sent for 3 LEDs, waiting for reception confirmation")
@@ -220,70 +224,4 @@ class DataCollection:
         self.motor.enable_motor(False) 
         print("One full sample complete for all LEDs")
 
-    def start_collection(self):
-        #pin_ir = Pin(14, Pin.IN)
-        #ir = NEC_8(pin_ir, self.callback)  # Instantiate receiver
-        #ir.error_function(print_error)  # Show debug information
-        current_dir = self.direction
-        self.motor.enable_motor(True)
-        self.motor.set_direction(True)#True is CW, False is CCW
-        #self.motor.set_direction(self.direction)#
-            # Open (or create) a file to store the data
-        with open('datasweep_Feb9_1050_watertrial.csv', 'w') as file:
-            for loop_number in range(1, 2):  # Outer loop, runs three times
-                #TODO: calibration needs to be here
-                for step_count in range(100000):  # Inner loop, runs 4000 times for each outer loop
-                    # Get combined sensor reading
-                    #print("before: "+str(time_ns()))
-                    #combined_data = self.combine_sensor_readings()
-                    #print(combined_data)
-                    #Append the loop number to the data
-                    #data_to_write = f"{loop_number},{combined_data}\n"
 
-                    # Write the data to the file
-                    
-                    if current_dir != self.direction:
-                        self.motor.set_direction(self.direction)
-                        current_dir = self.direction
-                    
-                    #time.sleep(0.1)
-                    #print("after: "+str(time_ns()))
-                    # Move one step after data is collected
-                    self.motor.move() # perform one step in the direction we need
-                    value = self.readValue(0)
-                    if step_count % 100 ==0:
-                        print("value = ", value, "\tVolts = ",value*(4.096*2)/(0xffff)) # TEST 2 (LAURENCE)
-                    volts_data = value*(4.096*2)/(0xffff)
-                    #data_to_write = f"{loop_number},{volts_data}\n"
-                    data_to_write = f"{step_count}, {volts_data}\n"
-                    file.write(data_to_write)
-                    #print("grating angle is:", self.motor.get_grating_angle())
-                    # TODO: this should be in a try/catch block to catch any errors in the move.
-                    #if step_count % 100 ==0:
-                        #print(str(self.stop) + ' ' + str(step_count %100))
-                    if self.stop == True:
-                        self.stop = False
-                        break
-                # Optional: a small delay between each outer loop iteration
-                time.sleep(0.1)
-                # TODO: call the calibration algorithm HERE
-        self.motor.enable_motor(False)    
-        #print("One full sample complete for all LEDs. Data stored in 'sensor_data.txt'.")
-
-# FOR TESTING ONLY. THIS CLASS SHOULD NOT HAVE A MAIN LOOP EVENTUALLY. 
-#def main():
-#    print("The payload control software has been started")
-# payload_control = DataCollection()
-# payload_control.start_collection()
-    
-    #grating_angle = payload_control.get_grating_angle()
-    #print("The current motor angle is: {:.4f}".format(grating_angle))
-    # testing if moving the motor updates the encoder value
-    #payload_control.motor.move()
-    #new_grating_angle = payload_control.get_grating_angle()
-    #print("The current motor angle is: {:.4f}".format(new_grating_angle))
-
-
-# Call the main function
-#if __name__ == "__main__":
-#    main()
