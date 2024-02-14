@@ -22,7 +22,7 @@ try:
             # Write data to file with timestamp in filename
             if not file_opened:  # If no file is opened, open a new one
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                current_filename = f"incoming_data_{timestamp}.csv"
+                current_filename = f"air_data_{timestamp}.csv"
                 file_opened = True  # Set the flag to indicate file is opened
             with open(current_filename, 'a') as file:
                 file.write(data + "\n")
