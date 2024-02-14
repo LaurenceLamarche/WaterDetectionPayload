@@ -1,3 +1,5 @@
+import sys
+sys.path.append('/opt/homebrew/lib/python3.11/site-packages')
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
