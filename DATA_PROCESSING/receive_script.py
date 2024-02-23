@@ -9,10 +9,21 @@ import time
 import os
 from datetime import datetime
 
+# Specify the directory where the files should be saved
+data_directory = os.path.join(os.path.dirname(__file__), 'data')  # Assuming this script is in the DATA_PROCESSING directory
+
+# Create the data directory if it doesn't exist
+os.makedirs(data_directory, exist_ok=True)
+
 # Replace 'COM_PORT' with your device file '/dev/tty.usbserial-A900LFQY'
 uart_id = 0
 baud_rate = 115200
-ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
+print("running script...")
+try: 
+    ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
+except FileNotFoundError:
+    print("UART adapter not found at its expected location")
+    
 
 # # PLOTTING STUFF 
 # # Define the range of wavelengths for the experimental data
@@ -49,6 +60,7 @@ ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
 # Call the main function
 
 try:
+    print("listening for data from PICO...")
     current_filenames = [None, None]  # Store the current filenames for clockwise and counterclockwise
     file_opened = [False, False]  # Flags to track if files are opened for clockwise and counterclockwise
     all_data_received = False
@@ -62,7 +74,9 @@ try:
             if not file_opened[led_count]:  # If no file is opened, open a new one
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 direction = "clockwise" if led_count == 0 else "counterclockwise"
-                current_filenames[led_count] = f"water_data_1050_{direction}_{timestamp}.csv"
+                filename = f"phone_flashlight_data_1050_{direction}_{timestamp}.csv"
+                filepath = os.path.join(data_directory, filename)
+                current_filenames[led_count] = filepath
                 file_opened[led_count] = True  # Set the flag to indicate file is opened
             
             # ============== PLOTTING STUFF
