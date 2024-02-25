@@ -8,6 +8,7 @@ import serial
 import time
 import os
 from datetime import datetime
+import sys
 
 # Specify the directory where the files should be saved
 data_directory = os.path.join(os.path.dirname(__file__), 'data')  # Assuming this script is in the DATA_PROCESSING directory
@@ -19,10 +20,12 @@ os.makedirs(data_directory, exist_ok=True)
 uart_id = 0
 baud_rate = 115200
 print("running data reception script...")
+sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
 try: 
     ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
 except FileNotFoundError:
     print("UART adapter not found at its expected location")
+    sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
     
 
 # # PLOTTING STUFF 
@@ -61,6 +64,7 @@ except FileNotFoundError:
 
 try:
     print("listening for data from PICO...")
+    sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
     current_filenames = [None, None]  # Store the current filenames for clockwise and counterclockwise
     file_opened = [False, False]  # Flags to track if files are opened for clockwise and counterclockwise
     all_data_received = False
@@ -96,6 +100,7 @@ try:
                 # Check if received data indicates end of 3 LED data
                 if data == "0, 0, 0":  # Pico sends it after it is done with each LED
                     print(f"LED {led_count + 1} done")
+                    sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG 
                     led_count += 1
                     if led_count == 2: ## TODO: FOR TESTING WITH 1 LED, DOUBLE SWEEP. Eventally, change back to 3
                         all_data_received = True
@@ -106,6 +111,7 @@ try:
         if all_data_received:
             # Send message back to PICO
             print("Data received for 3 LED, sending confirmation to PICO...")
+            sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
             ser.write(b"DATA RECEIVED\n")
 
             # Reset LED count and flags
