@@ -1,10 +1,8 @@
-from machine import Pin, UART, I2C, RTC
+from machine import Pin, UART, I2C, RTC, ADC
 import time
 from time import sleep, time_ns
 import uos
 from Motor import Motor
-from ir_rx.print_error import print_error
-from ir_rx.nec import NEC_8
 
 class DataCollection:
 
@@ -20,8 +18,9 @@ class DataCollection:
         self.com1 = UART(self.uart_id, self.baud_rate)
         #ADS1115 I2C connection
         
-        self.ADS = I2C(1, freq=400000, scl=Pin(11), sda=Pin(10)) # PICO 1 12C PINS
+        self.ADS = I2C(1, freq=400000, scl=Pin(3), sda=Pin(2)) # PICO 12C PINS
         self.address = 72
+        self.temp_sensor = ADC(26)
         
     # Functions to read from the ADC
     def readConfig(self):
@@ -76,32 +75,10 @@ class DataCollection:
         else:
             return None
         
-
-    # TEST Function to combine sensor readings into a single data packet
-    def combine_sensor_readings(self):
-        #print(time_ns)
-        # Read sensor values
-        # TODO: replace with actual real functions from DataCollectionTest.py
-        #photodetector_value = self.get_photodetector_value()
-        photodetector_value = "1"
-        #motor_angle = self.get_grating_angle()
-        motor_angle = "1.0"
-        temperature_1 = "1023"
-        temperature_2 = "512"
-        combined_data = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
-        
-        #return "65535,32768,1023,512" # just for testing
-        #print(time_ns)
-        return combined_data
-    
     
     def get_grating_angle(self):
         return self.motor.get_grating_angle()
     
-#     def get_photodetector_value(self):
-#         self.write(self.com1, f'photodetector')
-#         #TODO: put in try catch
-#         #return self.read(self.com1) # will this work ?
         
     def get_photodetector_value(self):
         #self.write(self.com1, 'photodetector')
@@ -142,15 +119,25 @@ class DataCollection:
                             current_dir = self.direction
                             
                         # COLLECT PHOTODETECTOR DATA
-                        value = self.readValue(0)
+                        value = self.readValue(3)
+                        #value = 62056
                         volts_data = value*(4.096*2)/(0xffff)
+                        adc_value = self.temp_sensor.read_u16()
+                        adc_voltage = adc_value * 3.3 / 65535
                         # Print data every 100 steps
                         if volts_data > maximum:
                             maximum = volts_data
                         if step_count % 100 == 0:
-                            print("value = ", value, "\tVolts = ", maximum)
+                            print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
                             maximum = 0
                             print(maximum)
+#                             grating_angle = self.get_grating_angle()
+#                             print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
+                            # CHECK FOR STOP COMMAND FROM GROUND
+                            ground_command = self.read(self.com1)
+                            if ground_command is not None:
+                                if ground_command == "STOP":
+                                    raise KeyboardInterrupt
                             
                         data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
@@ -159,19 +146,13 @@ class DataCollection:
                         self.write(self.com1, data_to_write)
                         
                         # MOVE MOTOR ONE STEP
-                        #self.motor.move() # perform one step in the direction we need
-                        
-                        #grating_angle = self.get_grating_angle()
-                        #print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
+                        self.motor.move() # perform one step in the direction we need
                         
                         # CHECK FOR STOP COMMAND
                         # TODO: check with Matt what that is
                         if self.stop == True:
                             self.stop = False
                             break
-                        # TODO: Added by Laurence, I think these are two attempts at one thing
-                        if interrupted_condition:
-                            raise KeyboardInterrupt  # Raise KeyboardInterrupt if the process is interrupted
                     # Optional: a small delay between each outer loop iteration
                     time.sleep(0.1)
                     self.write(self.com1, "0, 0, 0\n") # Send confirmation when done with one LED
@@ -197,6 +178,8 @@ class DataCollection:
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
             # Get the loop number and the number of steps completed
+            data_to_send = f"{led_number}, {step_count}, {volts_data}, STOPPED\n"
+            self.write(self.com1, data_to_send)
             return led_number, step_count
 
 

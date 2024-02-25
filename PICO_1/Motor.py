@@ -26,8 +26,8 @@ class Encoder:
             #else:
                 #self.counter -= 1
             self.clk_last_state = clk_state
-        print("grating angle is:", self.get_angle())
-        print("counter is: ", self.counter)
+        #print("grating angle is:", self.get_angle())
+        #print("counter is: ", self.counter)
         return self.counter
 
     def get_count(self):
@@ -44,20 +44,21 @@ class Encoder:
 class Motor:
     def __init__(self):
         # Define the pins connected to the A4988 driver
-        self.step_pin = machine.Pin(3, machine.Pin.OUT)
-        self.dir_pin = machine.Pin(6, machine.Pin.OUT)
-        self.enable_pin = machine.Pin(4, machine.Pin.OUT)
-        self.MS1_pin = machine.Pin(7, machine.Pin.OUT)
-        self.MS2_pin = machine.Pin(9, machine.Pin.OUT)
-        self.MS3_pin = machine.Pin(5, machine.Pin.OUT)
+        self.step_pin = machine.Pin(16, machine.Pin.OUT)
+        self.dir_pin = machine.Pin(15, machine.Pin.OUT)
+        self.sleep_pin = machine.Pin(17, machine.Pin.OUT) # was never set before
+        self.reset_pin = machine.Pin(18, machine.Pin.OUT) # was never set before
+        self.enable_pin = machine.Pin(22, machine.Pin.OUT)
+        self.MS1_pin = machine.Pin(21, machine.Pin.OUT)
+        self.MS2_pin = machine.Pin(20, machine.Pin.OUT)
+        self.MS3_pin = machine.Pin(19, machine.Pin.OUT)
 
-        #TODO: Verify these are the right pins
         # Initialize Encoder
-        self.encoder = Encoder(clk_pin=19, dt_pin=18, cpr=300)  
+        self.encoder = Encoder(clk_pin=10, dt_pin=28, cpr=300)
 
         # Set initial motor state
         self.enable_motor(False)
-        self.set_step_size(False, False)
+        self.set_step_size(False, False, False)
         self.set_direction(True)
         self.delay = 0.012 # TODO: Optimize this
 
@@ -70,20 +71,24 @@ class Motor:
     def enable_motor(self, enable):
         # Enable or disable the motor
         self.enable_pin.value(enable)
+        # They should be set together to high
+        self.sleep_pin.value(enable)
+        self.reset_pin.value(enable)
 
-    def set_step_size(self, MS1, MS2):
+    def set_step_size(self, MS1, MS2, MS3):
         # Set microstep values step size
         self.MS1_pin.value(MS1)
         self.MS2_pin.value(MS2)
+        self.MS3_pin.value(MS3) # was never set before
 
     def set_direction(self, direction):
         # Set the direction
         self.dir_pin.value(direction)
 
-    #TODO: test this
     def get_grating_angle(self):
         return self.encoder.get_angle()
-
+    
+    # TODO: Maybe use this for calibration?
     def move_half_turn(self, num_steps, total_time):
         # Calculate the delay based on the total time and the number of steps
         delay = total_time / num_steps
@@ -103,7 +108,7 @@ class Motor:
 
     def move(self):
         # we use the fixed delay
-        print("Performing move...")
+        #print("Performing move...")
         self.step_pin.on()
         time.sleep(self.delay/2)  # ensure it doesn't move so fast
         self.step_pin.off()
