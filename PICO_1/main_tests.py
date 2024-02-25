@@ -1,25 +1,35 @@
-# motor pico
+# TESTING WITH THE OLD TEST SETUP (LAURENCE)
 # =========================================== #
 # This main method is responsible for listening
-# for IR remote commands:
-# 2 = Start Data Collection (move the motor)
 # TODO: Add more commands here
 # =========================================== #
 
 import time
 import utime
 from machine import Pin, I2C, UART
+#import ADSlib
+# from easy_comms import Easy_comms
+#from ir_rx.print_error import print_error
+#from ir_rx.nec import NEC_8
 from DataCollection import DataCollection
+#from IR_remote import IR_remote
 
 # UART pico communication
 uart_id = 0
 baud_rate = 115200
 com1 = UART(uart_id, baud_rate)
+#com1 = Easy_comms(uart_id=0, baud_rate=9600)
+
 
 def write(com1, message:str):
     print(f'sending message: {message}')
     message = message + '\n'
     com1.write(bytes(message,'utf-8'))
+   
+#def start(self):
+ #   message = "ahoy\n"
+  #  print(message)
+   # self.send(message)
 
 def read(com1):
     timeout = 1000000000 # 1 second
@@ -41,39 +51,28 @@ def read(com1):
         return None
 
 
-#ADS1115 I2C connection
-#ADS = I2C(1, freq=400000, scl=Pin(15), sda=Pin(14)) # PICO 2 I2C PINS
-
-ADS = I2C(1, freq=400000, scl=Pin(11), sda=Pin(10)) # PICO 1 12C PINS
-address = 72
-def readConfig():
-    ADS.writeto(address, bytearray([1]))
-    result = ADS.readfrom(address, 2)
-    return result[0]<<8 | result[1]
-
-def readValue(channel):
-    ADS.writeto(address, bytearray([0]))
-    result = ADS.readfrom(address, 2)
-    
-    config = readConfig()
-    config &= ~(7<<12) & ~(7<<9)
-    config |= (7 & (4+channel))<<12
-    config |= (1<<9) #gain of 4.096 V
-    config |= (1<<15)
-    
-    config = [ int(config>>i & 0xff) for i in (8,0)]
-    ADS.writeto(address, bytearray([1] + config))
-    
-    config = readConfig()
-    while (config & 0x8000) ==0:
-        config = readConfig()
-    
-    ADS.writeto(address, bytearray([0]))
-    result = ADS.readfrom(address, 2)
-    return result[0]<<8 | result[0]
-
-# FOR TESTING
+# TODO: Verify if we want this here or in the loop
 a = DataCollection()
-a.start_collection()
+# TODO: JUST TESTING, remove this
+#a.start_collection()
 
+measure = False
 
+while True:
+    ground_command = read(com1)
+    
+    if ground_command == "MEASURE":
+        print("Receive START command from ground")
+        a = DataCollection()
+        try:
+            # Attempt to start data collection
+            #a.start_collection()
+            led_number, step_count = a.start_collection()
+        except KeyboardInterrupt:
+            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+            # Handle the interruption here
+            #led_number, step_count = a.start_collection()  # Get information about the state
+            print(f"Data collection interrupted at LED number {led_number} and step count {step_count}")
+            # Perform actions based on the interruption
+        finally:
+            measure = False

@@ -18,7 +18,7 @@ os.makedirs(data_directory, exist_ok=True)
 # Replace 'COM_PORT' with your device file '/dev/tty.usbserial-A900LFQY'
 uart_id = 0
 baud_rate = 115200
-print("running script...")
+print("running data reception script...")
 try: 
     ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
 except FileNotFoundError:
