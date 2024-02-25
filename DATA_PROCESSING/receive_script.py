@@ -74,7 +74,7 @@ try:
             if not file_opened[led_count]:  # If no file is opened, open a new one
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 direction = "clockwise" if led_count == 0 else "counterclockwise"
-                filename = f"phone_flashlight_data_1050_{direction}_{timestamp}.csv"
+                filename = f"phone_flashlight_data_1200_{direction}_{timestamp}.csv"
                 filepath = os.path.join(data_directory, filename)
                 current_filenames[led_count] = filepath
                 file_opened[led_count] = True  # Set the flag to indicate file is opened
