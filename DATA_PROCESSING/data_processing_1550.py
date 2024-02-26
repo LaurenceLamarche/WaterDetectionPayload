@@ -29,7 +29,7 @@ model_water_vapor_spectrum = pd.read_csv('data/Theoretical_water_data/model_wate
 model_water_vapor_spectrum.iloc[:, 0] = 1 / (model_water_vapor_spectrum.iloc[:, 0] * 1e-7)
 
 # Create figure and axes for subplots
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12), sharex=True)  # Use sharex parameter to align x-axis scales
 
 # Plot experimental data in the first subplot
 ax1.plot(air_data.iloc[:, 1], air_data.iloc[:, 2], label='air')
@@ -40,6 +40,7 @@ ax1.set_xlabel('Wavelength')
 ax1.set_ylabel('Intensity')
 ax1.set_title('Intensity vs Wavelength')
 ax1.legend()
+ax1.set_xlim(1450, 1700)  # Set x-axis limits
 
 # Plot water-plastic and theoretical curves in the second subplot
 water_minus_plastic = water_data.iloc[:, 2] - plastic_data.iloc[:, 2]
@@ -50,6 +51,16 @@ ax2.set_xlabel('Wavelength')
 ax2.set_ylabel('Intensity')
 ax2.set_title('Absorption Spectra')
 ax2.legend()
+ax2.set_xlim(1450, 1700)  # Set x-axis limits
+
+# Plot water-plastic with logarithmic scale for the x-axis in the third subplot
+ax3.plot(water_data.iloc[:, 1], water_minus_plastic, label='water minus plastic')
+ax3.set_xlabel('Wavelength')
+ax3.set_ylabel('Intensity')
+ax3.set_title('Water Minus Plastic (Log Scale)')
+ax3.legend()
+ax3.set_xlim(1450, 1700)  # Set x-axis limits
+ax3.set_xscale('log')  # Set logarithmic scale for x-axis
 
 # Adjust layout to prevent overlap
 plt.tight_layout()
