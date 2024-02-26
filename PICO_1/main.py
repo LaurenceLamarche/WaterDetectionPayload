@@ -67,31 +67,29 @@ def read(com1):
 # TODO: Verify if we want this here or in the loop
 a = DataCollection()
 # TODO: JUST TESTING, remove this
-a.start_collection()
+#a.start_collection()
 
 
 measure = False
-
+#num_samples = 1
 while True:
     ground_command = read(com1)
-    
+    #print(ground_command)
     if ground_command == "MEASURE":
         print("Received START command from ground")
-        a = DataCollection()
+        #a = DataCollection()
         try:
-            com1.write("MEASURE_RECEIVED")
+            write(com1, "STARTED")
             # Attempt to start data collection
             #a.start_collection()
             led_number, step_count = a.start_collection()
         except KeyboardInterrupt:
             # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
             # Handle the interruption here
-            #led_number, step_count = a.start_collection()  # Get information about the state
             print(f"Data collection interrupted at LED number {led_number} and step count {step_count}")
             # Perform actions based on the interruption
         finally:
             measure = False
-
 
 
 

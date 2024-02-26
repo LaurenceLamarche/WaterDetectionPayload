@@ -47,7 +47,7 @@ class Motor:
         self.step_pin = machine.Pin(16, machine.Pin.OUT)
         self.dir_pin = machine.Pin(15, machine.Pin.OUT)
         self.sleep_pin = machine.Pin(17, machine.Pin.OUT) # was never set before
-        self.reset_pin = machine.Pin(18, machine.Pin.OUT) # was never set before
+        self.reset_pin = machine.Pin(9, machine.Pin.OUT) # was never set before
         self.enable_pin = machine.Pin(22, machine.Pin.OUT)
         self.MS1_pin = machine.Pin(21, machine.Pin.OUT)
         self.MS2_pin = machine.Pin(20, machine.Pin.OUT)
@@ -70,7 +70,7 @@ class Motor:
 
     def enable_motor(self, enable):
         # Enable or disable the motor
-        self.enable_pin.value(enable)
+        self.enable_pin.value(not enable)
         # They should be set together to high
         self.sleep_pin.value(enable)
         self.reset_pin.value(enable)

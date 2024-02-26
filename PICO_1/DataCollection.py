@@ -97,7 +97,7 @@ class DataCollection:
             current_time = rtc.datetime()
             # Format the current date and time as a timestamp string
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
-            filename = "phone_flashlight_data_1200" + timestamp + ".csv"
+            filename = "backup_data_" + timestamp + ".csv"
             #filenmae = 'datasweep_Feb9_1050_watertrial.' # Use this to create a custom filename
             
             # ENABLE THE MOTOR, Set initial direction to clockwise
@@ -119,8 +119,8 @@ class DataCollection:
                             current_dir = self.direction
                             
                         # COLLECT PHOTODETECTOR DATA
-                        value = self.readValue(3)
-                        #value = 62056
+                        #value = self.readValue(3)
+                        value = 62056
                         volts_data = value*(4.096*2)/(0xffff)
                         adc_value = self.temp_sensor.read_u16()
                         adc_voltage = adc_value * 3.3 / 65535
@@ -129,16 +129,7 @@ class DataCollection:
                             maximum = volts_data
                         if step_count % 100 == 0:
                             print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
-                            maximum = 0
-                            print(maximum)
-#                             grating_angle = self.get_grating_angle()
-#                             print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
-                            # CHECK FOR STOP COMMAND FROM GROUND
-                            ground_command = self.read(self.com1)
-                            if ground_command is not None:
-                                if ground_command == "STOP":
-                                    raise KeyboardInterrupt
-                            
+
                         data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
                         
@@ -146,7 +137,7 @@ class DataCollection:
                         self.write(self.com1, data_to_write)
                         
                         # MOVE MOTOR ONE STEP
-                        self.motor.move() # perform one step in the direction we need
+                        #self.motor.move() # perform one step in the direction we need
                         
                         # CHECK FOR STOP COMMAND
                         # TODO: check with Matt what that is
@@ -174,6 +165,7 @@ class DataCollection:
                         break  # Exit the loop
             self.motor.enable_motor(False) 
             print("One full sample complete for all LEDs")
+            return led_number, step_count
             
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
