@@ -19,7 +19,7 @@ os.makedirs(data_directory, exist_ok=True)
 # Replace 'COM_PORT' with your device file '/dev/tty.usbserial-A900LFQY'
 uart_id = 0
 baud_rate = 115200
-print("running data reception script...")
+print("Running data reception script...")
 sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
 try: 
     ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
@@ -61,9 +61,29 @@ except FileNotFoundError:
 # # END OF PLOTTING STUFF
 
 # Call the main function
+started = False
+while not started: 
+    try:
+        print("Sending start command to PICO...")
+        sys.stdout.flush()
+        ser.write(b"MEASURE\n")
+        ser.flush()
+        time.sleep(1)
+        if ser.in_waiting > 0:
+            line = ser.readline().decode('utf-8').rstrip()
+            print(line)
+            sys.stdout.flush()
+            if line == "STARTED":
+                print("STARTED")
+                sys.stdout.flush()
+                started = True  # Exit the loop if the command is sent successfully
+    except KeyboardInterrupt:
+        ser.close()
+    time.sleep(0.1)    
 
+# Now, this is listening from the Data Collection loop on the pico
 try:
-    print("listening for data from PICO...")
+    print("Listening for data from PICO...")
     sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
     current_filenames = [None, None]  # Store the current filenames for clockwise and counterclockwise
     file_opened = [False, False]  # Flags to track if files are opened for clockwise and counterclockwise
@@ -122,3 +142,6 @@ try:
         #time.sleep(0.1)
 except KeyboardInterrupt:
     ser.close()
+
+started = False
+ser.close()
