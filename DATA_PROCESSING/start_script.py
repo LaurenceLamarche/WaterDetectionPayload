@@ -6,54 +6,24 @@ import sys
 # Replace 'COM_PORT' with your device file '/dev/tty.usbserial-A900LFQY'
 uart_id = 0
 baud_rate = 115200
+device = '/dev/tty.usbserial-A900LFQY'  # Your device file
 print("Running start script...")
 sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
 
-try: 
-    ser = serial.Serial('/dev/tty.usbserial-A900LFQY', baud_rate, timeout=1)
+try:
+    ser = serial.Serial(device, baud_rate, timeout=1)
+    ser.write(b"SLEEP\n")
+    ser.flush()
+    print("Sleep command sent.")
+    sys.stdout.flush()
 except FileNotFoundError:
     print("UART adapter not found at its expected location")
-    sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
-    
-# Call the main function
-    
-# retries = 3
-# for _ in range(retries):
-#     try:
-#         print("Sending start command to PICO...")
-#         sys.stdout.flush()
-#         ser.write(b"MEASURE\n")
-#         ser.flush()
-#         time.sleep(0.1)
-#         line = ser.readline().decode('utf-8').rstrip()
-#         print(line)
-#         sys.stdout.flush()
-#         if line == "STARTED":
-#             print("STARTED")
-#             sys.stdout.flush()
-#             break  # Exit the loop if the command is sent successfully
-#     except KeyboardInterrupt:
-#         ser.close()
-#     time.sleep(0.1)
-
-started = False
-while not started: 
-    try:
-        print("Sending start command to PICO...")
-        sys.stdout.flush()
-        ser.write(b"MEASURE\n")
-        #ser.flush()
-        time.sleep(0.1)
-        if ser.in_waiting > 0:
-            line = ser.readline().decode('utf-8').rstrip()
-            if line == "STARTED":
-                print("STARTED")
-                sys.stdout.flush()
-                started = True  # Exit the loop if the command is sent successfully
-    except KeyboardInterrupt:
+    sys.stdout.flush()
+except Exception as e:
+    print(f"Error sending sleep command: {str(e)}")
+    sys.stdout.flush()
+finally:
+    if ser:
+        # Close the serial port
         ser.close()
-    time.sleep(0.1)    
-
-# Close the serial port
-ser.close()
     

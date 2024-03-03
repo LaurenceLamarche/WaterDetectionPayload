@@ -1,9 +1,3 @@
-# import sys
-# sys.path.append('/opt/homebrew/lib/python3.11/site-packages')
-# import pandas as pd
-# import numpy as np
-# import matplotlib.pyplot as plt
-
 import serial
 import time
 import os
@@ -28,38 +22,6 @@ except FileNotFoundError:
     sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
     
 
-# # PLOTTING STUFF 
-# # Define the range of wavelengths for the experimental data
-# min_wavelength_exp = 910
-# max_wavelength_exp = 1370
-
-# # Function to plot the data
-# def plot_data(intensity_exp):
-#     # Smooth the experimental data (using a simple moving average for demonstration)
-#     window_size = 10
-#     smoothed_intensity_exp = pd.Series(intensity_exp).rolling(window=window_size, center=True).mean()
-
-#     # Normalize the smoothed intensity data
-#     normalized_intensity_exp = (smoothed_intensity_exp - smoothed_intensity_exp.min()) / (smoothed_intensity_exp.max() - smoothed_intensity_exp.min())
-
-#     # Map experimental data indices to the wavelength range
-#     num_points_exp = len(normalized_intensity_exp)
-#     wavelengths_exp = np.linspace(min_wavelength_exp, max_wavelength_exp, num_points_exp)
-
-#     # Plot: Experimental Data
-#     plt.figure(figsize=(10, 8))
-#     plt.plot(wavelengths_exp, normalized_intensity_exp, 'b', label='Normalized Experimental Data')
-#     plt.xlabel('Wavelength (nm)')
-#     plt.ylabel('Normalized Intensity')
-#     plt.title('Real-time Plot of Experimental Data')
-#     plt.legend(loc='upper left')
-#     plt.grid(True)
-#     plt.tight_layout()  # Adjust layout to not overlap
-#     plt.draw()
-#     plt.pause(0.1)  # Pause to allow the plot to be updated
-
-# # END OF PLOTTING STUFF
-
 # Call the main function
 started = False
 while not started: 
@@ -71,12 +33,25 @@ while not started:
         time.sleep(1)
         if ser.in_waiting > 0:
             line = ser.readline().decode('utf-8').rstrip()
-            print(line)
+            #print(line)
+            #print(line[0])
             sys.stdout.flush()
             if line == "STARTED":
                 print("STARTED")
                 sys.stdout.flush()
                 started = True  # Exit the loop if the command is sent successfully
+                break
+            else:
+            # Attempt to parse the data to check if it begins with 1 or 2
+                try:
+                    first_number = int(line.split(',')[0].strip())
+                    if first_number in [1, 2]:
+                        print("Data collection has started with data:", line)
+                        sys.stdout.flush()
+                        started = True  # Exit the loop as data collection has started
+                except ValueError:
+                    # Handle the case where the parsing fails (e.g., if the line doesn't contain expected data format)
+                    pass
     except KeyboardInterrupt:
         ser.close()
     time.sleep(0.1)    
@@ -98,22 +73,10 @@ try:
             if not file_opened[led_count]:  # If no file is opened, open a new one
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 direction = "clockwise" if led_count == 0 else "counterclockwise"
-                filename = f"phone_flashlight_data_1200_{direction}_{timestamp}.csv"
+                filename = f"full_setup_test_1050_{direction}_{timestamp}.csv"
                 filepath = os.path.join(data_directory, filename)
                 current_filenames[led_count] = filepath
                 file_opened[led_count] = True  # Set the flag to indicate file is opened
-            
-            # ============== PLOTTING STUFF
-
-            # # Append intensity data to the list
-            # intensity_exp_data.append(data)
-
-            # # Check if a certain number of data points have been received
-            # if len(intensity_exp_data) == 10:  # Change this number as needed
-            #     plot_data(intensity_exp_data)
-            #     intensity_exp_data.clear()  # Clear intensity data for the next set of points
-            
-            # ============== END PLOTTING STUFF
 
             with open(current_filenames[led_count], 'a') as file:
 
@@ -133,7 +96,7 @@ try:
             print("Data received for 3 LED, sending confirmation to PICO...")
             sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG
             ser.write(b"DATA RECEIVED\n")
-
+            ser.flush()
             # Reset LED count and flags
             led_count = 0
             all_data_received = False
@@ -143,5 +106,6 @@ try:
 except KeyboardInterrupt:
     ser.close()
 
-started = False
+#started = False
 ser.close()
+
