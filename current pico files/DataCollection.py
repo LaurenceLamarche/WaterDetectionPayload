@@ -44,7 +44,7 @@ class DataCollection:
         config &= ~(7<<12) & ~(7<<9) #doing this sets a default gain of 6.124 volts
         config |= (7 & (4+channel))<<12
         #config |= (1<<9) #gain of 4.096 V
-        config |= (1<<15)
+        config |= (1<<15) 
         
         config = [ int(config>>i & 0xff) for i in (8,0)]
         self.ADS.writeto(self.address, bytearray([1] + config))
@@ -83,41 +83,6 @@ class DataCollection:
         else:
             return None
         
-'''
-    # TEST Function to combine sensor readings into a single data packet
-    def combine_sensor_readings(self):
-        print(time.time_ns)
-        # Read sensor values
-        # TODO: replace with actual real functions from DataCollectionTest.py
-        #photodetector_value = self.get_photodetector_value()
-        photodetector_value = "1"
-        #motor_angle = self.get_grating_angle()
-        motor_angle = "1.0"
-        temperature_1 = "1023"
-        temperature_2 = "512"
-        combined_data = f"{photodetector_value},{motor_angle},{temperature_1},{temperature_2}"
-        
-        #return "65535,32768,1023,512" # just for testing
-        print(time.time_ns)
-        return combined_data
-    
-    
-    def get_grating_angle(self):
-        return self.motor.get_grating_angle()
-    
-#     def get_photodetector_value(self):
-#         self.write(self.com1, f'photodetector')
-#         #TODO: put in try catch
-#         #return self.read(self.com1) # will this work ?
-        
-    def get_photodetector_value(self):
-        #self.write(self.com1, 'photodetector')
-        response = self.read(self.com1)
-        if isinstance(response, str):
-            return response  # String response
-        else:
-            print("Received raw data:", response)
-            # Handle raw data response here, if necessary'''
     def temp_control(self):
         while True:
             self.temp_c = "0"
