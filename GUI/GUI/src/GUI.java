@@ -42,33 +42,43 @@ public class GUI {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
 
         // Create the start JButton
-        JButton button = new JButton("Start Data Collection");
-        button.setForeground(Color.WHITE); // Set text color to white
-        button.setBackground(new Color(0, 128, 0)); // Set background color to green
-        button.setOpaque(true);
-        button.setBorderPainted(false);
-        button.setFocusPainted(false); // Remove focus border
-        button.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+        JButton startCollectionButton = new JButton("Start Data Collection");
+        startCollectionButton.setForeground(Color.WHITE); // Set text color to white
+        startCollectionButton.setBackground(new Color(0, 128, 0)); // Set background color to green
+        startCollectionButton.setOpaque(true);
+        startCollectionButton.setBorderPainted(false);
+        startCollectionButton.setFocusPainted(false); // Remove focus border
+        startCollectionButton.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
 
         // Set preferred size for the button
-        button.setPreferredSize(new Dimension(200, 40)); // Adjust width and height as needed
+        startCollectionButton.setPreferredSize(new Dimension(200, 40)); // Adjust width and height as needed
 
         // Create the Sleep Mode JButton
-        JButton button1 = new JButton("Sleep Mode");
-        button1.setForeground(Color.WHITE); // Set text color to white
-        button1.setBackground(Color.BLUE); // Set background color to green
-        button1.setOpaque(true);
-        button1.setBorderPainted(false);
-        button1.setFocusPainted(false); // Remove focus border
-        button1.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
-
+        JButton sleepButton = new JButton("Sleep Mode");
+        sleepButton.setForeground(Color.WHITE); // Set text color to white
+        sleepButton.setBackground(Color.BLUE); // Set background color to green
+        sleepButton.setOpaque(true);
+        sleepButton.setBorderPainted(false);
+        sleepButton.setFocusPainted(false); // Remove focus border
+        sleepButton.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
         // Set preferred size for the button
-        button1.setPreferredSize(new Dimension(200, 40)); // Adjust width and height as needed
+        sleepButton.setPreferredSize(new Dimension(200, 40)); // Adjust width and height as needed
 
+        // create the PLot button
+        JButton plotButton = new JButton("Plot Data");
+        plotButton.setForeground(Color.WHITE); // Set text color to white
+        plotButton.setBackground(Color.RED); // Set background color to green
+        plotButton.setOpaque(true);
+        plotButton.setBorderPainted(false);
+        plotButton.setFocusPainted(false); // Remove focus border
+        plotButton.setFont(new Font("Arial", Font.BOLD, 16)); // Set font and size
+        // Set preferred size for the button
+        plotButton.setPreferredSize(new Dimension(200, 40));
 
-        // Add the button to the BorderLayout panel
-        buttonPanel.add(button);
-        buttonPanel.add(button1);
+        // Add the buttons to the BorderLayout panel
+        buttonPanel.add(startCollectionButton);
+        buttonPanel.add(sleepButton);
+        buttonPanel.add(plotButton);
 
         // Add the BorderLayout panel to the GridBagLayout panel
         constraints.gridx = 0;
@@ -77,8 +87,8 @@ public class GUI {
         constraints.anchor = GridBagConstraints.CENTER;
         panel.add(buttonPanel, constraints);
 
-        // Add an ActionListener to the button
-        button.addActionListener(new ActionListener() {
+        // Add an ActionListener to the start data collection button
+        startCollectionButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 // Start the Python script in a separate thread
@@ -101,28 +111,41 @@ public class GUI {
                         }
                     }
                 }).start();
+            }
+        });
 
-//                // Send UART command to start data collection in a separate thread
-//                new Thread(new Runnable() {
-//                    @Override
-//                    public void run() {
-//                        try {
-//                            Process process = Runtime.getRuntime().exec("python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/start_script.py");
-//                            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//                            String line;
-//                            //outputTextArea.append("starting thread 2\n");
-//                            while ((line = reader.readLine()) != null) {
-//                                // Append the output to the JTextArea
-//                                outputTextArea.append(line + "\n");
-//                            }
-//                        } catch (IOException ex) {
-//                            ex.printStackTrace();
-//                            // Handle any errors that occur while starting the script
-//                            JOptionPane.showMessageDialog(frame, "Error starting 2nd Python script: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-//                        }
-//
-//                    }
-//                }).start();
+        sleepButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                // Start the Python start script in a separate thread
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            Process process = Runtime.getRuntime().exec("python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/start_script.py");
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                            String line;
+                            //outputTextArea.append("starting thread 2\n");
+                            while ((line = reader.readLine()) != null) {
+                                // Append the output to the JTextArea
+                                outputTextArea.append(line + "\n");
+                            }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                            // Handle any errors that occur while starting the script
+                            JOptionPane.showMessageDialog(frame, "Error starting 2nd Python script: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                        }
+
+                    }
+                }).start();
+            }
+        });
+
+        // Add ActionListener for the new button (example logic)
+        plotButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(frame, "When data is available, you can display it here", "Data Plots", JOptionPane.INFORMATION_MESSAGE);
             }
         });
 
