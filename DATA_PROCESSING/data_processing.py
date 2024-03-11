@@ -47,6 +47,7 @@ import glob
 import argparse
 import pandas as pd
 import matplotlib.pyplot as plt
+import signal
 
 # Example cleanup function
 def clean_exit(signum, frame):
