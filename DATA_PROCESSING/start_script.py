@@ -3,6 +3,17 @@ import time
 import os
 import sys
 
+# Example cleanup function
+def clean_exit(signum, frame):
+    print("Closing the sleep script...")
+    sys.stdout.flush()
+    # Close the serial connection
+    ser.close()
+    sys.exit(0)
+
+# Register the signal handler for clean exit
+signal.signal(signal.SIGINT, clean_exit)
+
 # Replace 'COM_PORT' with your device file '/dev/tty.usbserial-A900LFQY'
 uart_id = 0
 baud_rate = 115200

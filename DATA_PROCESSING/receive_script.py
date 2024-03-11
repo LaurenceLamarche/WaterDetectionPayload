@@ -1,8 +1,20 @@
 import serial
+import signal
 import time
 import os
 from datetime import datetime
 import sys
+
+# Example cleanup function
+def clean_exit(signum, frame):
+    print("Closing the receive script...")
+    sys.stdout.flush()
+    # Close your serial connection here
+    ser.close()
+    sys.exit(0)
+
+# Register the signal handler for clean exit
+signal.signal(signal.SIGINT, clean_exit)
 
 # Specify the directory where the files should be saved
 data_directory = os.path.join(os.path.dirname(__file__), 'data')  # Assuming this script is in the DATA_PROCESSING directory
@@ -73,7 +85,7 @@ try:
             if not file_opened[led_count]:  # If no file is opened, open a new one
                 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 direction = "clockwise" if led_count == 0 else "counterclockwise"
-                filename = f"full_setup_test_1050_{direction}_{timestamp}.csv"
+                filename = f"data_{direction}_{timestamp}.csv"
                 filepath = os.path.join(data_directory, filename)
                 current_filenames[led_count] = filepath
                 file_opened[led_count] = True  # Set the flag to indicate file is opened
@@ -85,7 +97,7 @@ try:
                     print(f"LED {led_count + 1} done")
                     sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG 
                     led_count += 1
-                    if led_count == 2: ## TODO: FOR TESTING WITH 1 LED, DOUBLE SWEEP. Eventally, change back to 3
+                    if led_count == 1: ## TODO: FOR TESTING WITH 1 LED, DOUBLE SWEEP. Eventally, change back to 3
                         all_data_received = True
                 else:
                     file.write(data + "\n")
@@ -101,6 +113,7 @@ try:
             led_count = 0
             all_data_received = False
             file_opened = [False, False]  # Reset the flags to indicate no files are opened
+            ser.close()
 
         #time.sleep(0.1)
 except KeyboardInterrupt:
