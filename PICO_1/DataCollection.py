@@ -29,25 +29,29 @@ class DataCollection:
         return result[0]<<8 | result[1]
 
     def readValue(self, channel):
-        self.ADS.writeto(self.address, bytearray([0]))
-        result = self.ADS.readfrom(self.address, 2)
-        
-        config = self.readConfig()
-        config &= ~(7<<12) & ~(7<<9)
-        config |= (7 & (4+channel))<<12
-        config |= (1<<9) #gain of 4.096 V
-        config |= (1<<15)
-        
-        config = [ int(config>>i & 0xff) for i in (8,0)]
-        self.ADS.writeto(self.address, bytearray([1] + config))
-        
-        config = self.readConfig()
-        while (config & 0x8000) ==0:
+        try:
+            self.ADS.writeto(self.address, bytearray([0]))
+            result = self.ADS.readfrom(self.address, 2)
+            
             config = self.readConfig()
-        
-        self.ADS.writeto(self.address, bytearray([0]))
-        result = self.ADS.readfrom(self.address, 2)
-        return result[0]<<8 | result[0]
+            config &= ~(7<<12) & ~(7<<9)
+            config |= (7 & (4+channel))<<12
+            #config |= (1<<9) #gain of 4.096 V
+            config |= (1<<15)
+            
+            config = [ int(config>>i & 0xff) for i in (8,0)]
+            self.ADS.writeto(self.address, bytearray([1] + config))
+            
+            config = self.readConfig()
+            while (config & 0x8000) ==0:
+                config = self.readConfig()
+            #print(config)
+            self.ADS.writeto(self.address, bytearray([0]))
+            result = self.ADS.readfrom(self.address, 2)
+            return result[0]<<8 | result[0]
+        except:
+            #print("error reading value from ADC")
+            return -1
     
     # UART STUFF
 
@@ -97,7 +101,7 @@ class DataCollection:
             current_time = rtc.datetime()
             # Format the current date and time as a timestamp string
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
-            filename = "backup_data_" + timestamp + ".csv"
+            filename = "data_backup_" + timestamp + ".csv"
             #filenmae = 'datasweep_Feb9_1050_watertrial.' # Use this to create a custom filename
             
             # ENABLE THE MOTOR, Set initial direction to clockwise
@@ -107,11 +111,12 @@ class DataCollection:
             
             # OPEN (OR CREATE) THE BACKUP FILE
             maximum = 0
+            average = 0
             with open(filename, 'w') as file:
-                for led_number in range(1, 3):  # Outer loop, (1, 4) runs three times (once per LED)
+                for led_number in range(1, 2):  # Outer loop, (1, 4) runs three times (once per LED)
                     
                     #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
-                    for step_count in range(3000):    
+                    for step_count in range(1000):    
                         # CHECK TO SEE IF DIRECTION CHANGED
                         
                         if current_dir != self.direction:
@@ -119,17 +124,43 @@ class DataCollection:
                             current_dir = self.direction
                             
                         # COLLECT PHOTODETECTOR DATA
-                        #value = self.readValue(3)
-                        value = 62056
-                        volts_data = value*(4.096*2)/(0xffff)
-                        adc_value = self.temp_sensor.read_u16()
-                        adc_voltage = adc_value * 3.3 / 65535
+                        value = self.readValue(3)
+                        volts_data = value*(6.124*2)/(0xffff)
                         # Print data every 100 steps
+                        average = average + volts_data # add to the running total
+                        
                         if volts_data > maximum:
                             maximum = volts_data
                         if step_count % 100 == 0:
-                            print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
-
+                            adc_value = self.temp_sensor.read_u16()
+                            adc_voltage = adc_value * 3.3 / 65535
+                            
+                            average = average/100
+                            
+                            value = self.readValue(2)
+                            ts_1 = value*(6.124*2)/(0xffff)
+                        
+                            value = self.readValue(1)
+                            ts_2 = value*(6.124*2)/(0xffff)
+                        
+                            value = self.readValue(0)
+                            ts_3 = value*(6.124*2)/(0xffff)
+                            
+                            #print("Photodiode: ", maximum, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
+                            print("Photodiode: ", average, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
+                            
+                            # print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
+                            maximum = 0
+                            average = 0
+#                             grating_angle = self.get_grating_angle()
+#                             print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
+                            
+                            # CHECK FOR STOP COMMAND FROM GROUND
+                            ground_command = self.read(self.com1)
+                            #print(ground_command)
+                            if ground_command == "STOP":
+                                return led_number, step_count
+#                             
                         data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
                         
@@ -165,7 +196,6 @@ class DataCollection:
                         break  # Exit the loop
             self.motor.enable_motor(False) 
             print("One full sample complete for all LEDs")
-            return led_number, step_count
             
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are

@@ -17,6 +17,7 @@ baud_rate = 115200
 com1 = UART(uart_id, baud_rate)
 #com1 = Easy_comms(uart_id=0, baud_rate=9600)
 
+pwm_max = 2**16 - 1
 # Define the PWM pins for the LEDs
 # 1200
 LED1200_pin = Pin(11)
@@ -81,8 +82,9 @@ while True:
         try:
             write(com1, "STARTED")
             # Attempt to start data collection
-            #a.start_collection()
-            led_number, step_count = a.start_collection()
+            #a = DataCollection()
+            led_number, step_count = a.start_collection() # save for when starting again
+            print(f"Data collection finished at LED number {led_number} and step count {step_count}")
         except KeyboardInterrupt:
             # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
             # Handle the interruption here
@@ -90,6 +92,32 @@ while True:
             # Perform actions based on the interruption
         finally:
             measure = False
+    elif ground_command == "SLEEP":
+        print("Received SLEEP command from ground")
+        try:
+            write(com1, "SLEEP MODE ACTIVATED - GOOD NIGHT")
+        except KeyboardInterrupt:
+            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+            # Handle the interruption here
+            print("Sleep command execution was interrupted")
+            # Perform actions based on the interruption
+        except:
+            print("Error sending sleep confirmation")
+    
+    elif ground_command == "STOP":
+        print("Received SLEEP command from ground, but Data Collection not running")
+    
+    elif ground_command == "REVERSE":
+        print("Received REVERSE command from ground, direction will be changed for the next data collection loop")
+        try:
+            write(com1, "Motor direction changed for next time")
+        except KeyboardInterrupt:
+            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+            # Handle the interruption here
+            print("Reverse command execution was interrupted")
+            # Perform actions based on the interruption
+        except:
+            print("Error sending motor reversing confirmation")
 
 
 
