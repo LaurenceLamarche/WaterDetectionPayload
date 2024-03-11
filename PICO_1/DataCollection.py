@@ -6,16 +6,17 @@ from Motor import Motor
 
 class DataCollection:
 
-    def __init__(self):
+    def __init__(self, com):
         # Initialize Motor instance
         self.motor = Motor()
         self.direction = False #counterclockwise
         self.stop = False
         
         # UART pico communication
-        self.uart_id = 0
-        self.baud_rate = 115200
-        self.com1 = UART(self.uart_id, self.baud_rate)
+        #self.uart_id = 0
+        #self.baud_rate = 115200
+        #self.com1 = UART(self.uart_id, self.baud_rate)
+        self.com1 = com
         #ADS1115 I2C connection
         
         self.ADS = I2C(1, freq=400000, scl=Pin(3), sda=Pin(2)) # PICO 12C PINS
@@ -172,17 +173,12 @@ class DataCollection:
                         # MOVE MOTOR ONE STEP
                         #self.motor.move() # perform one step in the direction we need
                         
-                        # CHECK FOR STOP COMMAND
-                        # TODO: check with Matt what that is
-                        if self.stop == True:
-                            self.stop = False
-                            break
                     # Optional: a small delay between each outer loop iteration
                     time.sleep(0.1)
                     self.write(self.com1, "0, 0, 0\n") # Send confirmation when done with one LED
                     
                     ## JUST FOR TESTING WITH ONE LED
-                    self.motor.set_direction(False)#True is CW, False is CCW
+                    #self.motor.set_direction(False)#True is CW, False is CCW
                     
                 # Wait for confirmation message
                 confirmation_received = False
@@ -198,7 +194,8 @@ class DataCollection:
                         break  # Exit the loop
             self.motor.enable_motor(False) 
             print("One full sample complete for all LEDs")
-            
+            return led_number, step_count
+        
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
             # Get the loop number and the number of steps completed

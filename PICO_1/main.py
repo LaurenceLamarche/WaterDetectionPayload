@@ -66,59 +66,67 @@ def read(com1):
         return None
 
 # TODO: Verify if we want this here or in the loop
-a = DataCollection()
+a = DataCollection(com1)
 # TODO: JUST TESTING, remove this
 #a.start_collection()
 
 
 measure = False
 #num_samples = 1
-while True:
-    ground_command = read(com1)
-    #print(ground_command)
-    if ground_command == "MEASURE":
-        print("Received START command from ground")
-        #a = DataCollection()
-        try:
-            write(com1, "STARTED")
-            # Attempt to start data collection
+try:
+    while True:
+        ground_command = read(com1)
+        #print(ground_command)
+        if ground_command == "MEASURE":
+            print("Received START command from ground")
             #a = DataCollection()
-            led_number, step_count = a.start_collection() # save for when starting again
-            print(f"Data collection finished at LED number {led_number} and step count {step_count}")
-        except KeyboardInterrupt:
-            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
-            # Handle the interruption here
-            print(f"Data collection interrupted at LED number {led_number} and step count {step_count}")
-            # Perform actions based on the interruption
-        finally:
-            measure = False
-    elif ground_command == "SLEEP":
-        print("Received SLEEP command from ground")
-        try:
-            write(com1, "SLEEP MODE ACTIVATED - GOOD NIGHT")
-        except KeyboardInterrupt:
-            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
-            # Handle the interruption here
-            print("Sleep command execution was interrupted")
-            # Perform actions based on the interruption
-        except:
-            print("Error sending sleep confirmation")
-    
-    elif ground_command == "STOP":
-        print("Received SLEEP command from ground, but Data Collection not running")
-    
-    elif ground_command == "REVERSE":
-        print("Received REVERSE command from ground, direction will be changed for the next data collection loop")
-        try:
-            write(com1, "Motor direction changed for next time")
-        except KeyboardInterrupt:
-            # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
-            # Handle the interruption here
-            print("Reverse command execution was interrupted")
-            # Perform actions based on the interruption
-        except:
-            print("Error sending motor reversing confirmation")
-
+            try:
+                write(com1, "STARTED")
+                # Attempt to start data collection
+                #a = DataCollection()
+                led_number, step_count = a.start_collection() # save for when starting again
+                print(f"Data collection finished at LED number {led_number} and step count {step_count}")
+            except KeyboardInterrupt:
+                # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+                # Handle the interruption here
+                print(f"Data collection interrupted at LED number {led_number} and step count {step_count}")
+                # Perform actions based on the interruption
+                com1.deinit() #close the com port
+            finally:
+                measure = False
+                #com1.deinit() #close the com port
+        elif ground_command == "SLEEP":
+            print("Received SLEEP command from ground")
+            try:
+                write(com1, "SLEEP MODE ACTIVATED - GOOD NIGHT")
+            except KeyboardInterrupt:
+                # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+                # Handle the interruption here
+                print("Sleep command execution was interrupted")
+                # Perform actions based on the interruption
+                com1.deinit() #close the com port
+            except:
+                print("Error sending sleep confirmation")
+        
+        elif ground_command == "STOP":
+            print("Received SLEEP command from ground, but Data Collection not running")
+        
+        elif ground_command == "REVERSE":
+            print("Received REVERSE command from ground, direction will be changed for the next data collection loop")
+            try:
+                a.change_direction()
+                write(com1, "Motor direction changed for next time")
+            except KeyboardInterrupt:
+                # If KeyboardInterrupt occurs (e.g., Ctrl+C is pressed)
+                # Handle the interruption here
+                print("Reverse command execution was interrupted")
+                # Perform actions based on the interruption
+                com1.deinit() #close the com port
+            except:
+                print("Error sending motor reversing confirmation")
+except KeyboardInterrupt:
+    if (com1):
+        com1.deinit() #close the com port when interrupted
 
 
 
