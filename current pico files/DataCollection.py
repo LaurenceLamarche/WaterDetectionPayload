@@ -181,7 +181,8 @@ class DataCollection:
                     
                     ## JUST FOR TESTING WITH ONE LED
                     #self.motor.set_direction(False)#True is CW, False is CCW
-                    
+                
+                self.led.pwm_pin.duty_u16(0)    
                 self.led_on = False
                 
                 # Wait for confirmation message
