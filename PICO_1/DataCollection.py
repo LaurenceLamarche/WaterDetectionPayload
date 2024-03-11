@@ -9,7 +9,7 @@ class DataCollection:
     def __init__(self):
         # Initialize Motor instance
         self.motor = Motor()
-        self.direction = False
+        self.direction = False #counterclockwise
         self.stop = False
         
         # UART pico communication
@@ -93,6 +93,10 @@ class DataCollection:
             #print("Received raw data:", response)
             # Handle raw data response here, if necessary
             
+    def change_direction(self):
+        self.direction = not self.direction #reverse the direction
+        self.motor.set_direction(self.direction) #change motor's direction
+            
     def start_collection(self):
         
         try:
@@ -105,9 +109,9 @@ class DataCollection:
             #filenmae = 'datasweep_Feb9_1050_watertrial.' # Use this to create a custom filename
             
             # ENABLE THE MOTOR, Set initial direction to clockwise
-            current_dir = self.direction
+            #current_dir = self.direction
             self.motor.enable_motor(True)
-            self.motor.set_direction(True)#True is CW, False is CCW
+            #self.motor.set_direction(True)#True is CW, False is CCW
             
             # OPEN (OR CREATE) THE BACKUP FILE
             maximum = 0
@@ -117,11 +121,6 @@ class DataCollection:
                     
                     #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
                     for step_count in range(1000):    
-                        # CHECK TO SEE IF DIRECTION CHANGED
-                        
-                        if current_dir != self.direction:
-                            self.motor.set_direction(self.direction)
-                            current_dir = self.direction
                             
                         # COLLECT PHOTODETECTOR DATA
                         value = self.readValue(3)
@@ -157,9 +156,12 @@ class DataCollection:
                             
                             # CHECK FOR STOP COMMAND FROM GROUND
                             ground_command = self.read(self.com1)
-                            #print(ground_command)
-                            if ground_command == "STOP":
-                                return led_number, step_count
+                            if ground_command is not None:
+                                print(ground_command)
+                                if ground_command == "STOP":
+                                    return led_number, step_count
+                                elif ground_command == "REVERSE":
+                                    self.change_direction()
 #                             
                         data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
