@@ -1,27 +1,29 @@
-from machine import Pin, UART, I2C, PWM, RTC
+from machine import Pin, UART, I2C, RTC, ADC
 import time
+from time import sleep, time_ns
 import uos
 from Motor import Motor
 from PID import PID
 from LED import LED
-
-
+# march 14
 
 class DataCollection:
 
-    def __init__(self):
+    def __init__(self, com):
         # Initialize Motor instance
         self.motor = Motor()
-        self.direction = False
+        self.direction = False #counterclockwise TODO: FIGURE THIS OUT
+        #self.direction = True #clockwise
         self.stop = False
         
         # UART pico communication
-        self.uart_id = 0
-        self.baud_rate = 115200
-        self.com1 = UART(self.uart_id, self.baud_rate)
+        #self.uart_id = 0
+        #self.baud_rate = 115200
+        #self.com1 = UART(self.uart_id, self.baud_rate)
+        self.com1 = com
         #ADS1115 I2C connection
         
-        self.ADS = I2C(1, freq=400000, scl=Pin(3), sda=Pin(2)) # PICO 1 12C PINS
+        self.ADS = I2C(1, freq=400000, scl=Pin(3), sda=Pin(2)) # PICO 12C PINS
         self.address = 72
         self.temp_sensor = ADC(26)
         
@@ -37,41 +39,45 @@ class DataCollection:
         return result[0]<<8 | result[1]
 
     def readValue(self, channel):
-        self.ADS.writeto(self.address, bytearray([0]))
-        result = self.ADS.readfrom(self.address, 2)
-        
-        config = self.readConfig()
-        config &= ~(7<<12) & ~(7<<9) #doing this sets a default gain of 6.124 volts
-        config |= (7 & (4+channel))<<12
-        #config |= (1<<9) #gain of 4.096 V
-        config |= (1<<15) 
-        
-        config = [ int(config>>i & 0xff) for i in (8,0)]
-        self.ADS.writeto(self.address, bytearray([1] + config))
-        
-        config = self.readConfig()
-        while (config & 0x8000) ==0:
+        try:
+            self.ADS.writeto(self.address, bytearray([0]))
+            result = self.ADS.readfrom(self.address, 2)
+            
             config = self.readConfig()
-        
-        self.ADS.writeto(self.address, bytearray([0]))
-        result = self.ADS.readfrom(self.address, 2)
-        return result[0]<<8 | result[0]
+            config &= ~(7<<12) & ~(7<<9)
+            config |= (7 & (4+channel))<<12
+            #config |= (1<<9) #gain of 4.096 V
+            config |= (1<<15)
+            
+            config = [ int(config>>i & 0xff) for i in (8,0)]
+            self.ADS.writeto(self.address, bytearray([1] + config))
+            
+            config = self.readConfig()
+            while (config & 0x8000) ==0:
+                config = self.readConfig()
+            #print(config)
+            self.ADS.writeto(self.address, bytearray([0]))
+            result = self.ADS.readfrom(self.address, 2)
+            return result[0]<<8 | result[0]
+        except:
+            #print("error reading value from ADC")
+            return -1
     
     # UART STUFF
 
     def write(self, com1, message:str):
-        print(f'sending message: {message}')
-        message = message + '\n'
+        #print(f'sending message: {message}')
+        #message = message + '\n'
         com1.write(bytes(message,'utf-8'))
 
     def read(self, com1):
         timeout = 1000000000 # 1 second
-        start_time = time.time_ns()
+        start_time = time_ns()
         current_time = start_time
         message_end = False
         message = ""
         while (not message_end) and (current_time <= (start_time + timeout)):
-            current_time = time.time_ns()
+            current_time = time_ns()
             if (com1.any() > 0):
                 #print(com1.read())
                 message = message + com1.read().decode('utf-8')
@@ -83,12 +89,36 @@ class DataCollection:
         else:
             return None
         
+    
+    def get_grating_angle(self):
+        return self.motor.get_grating_angle()
+    
+        
+    def get_photodetector_value(self):
+        #self.write(self.com1, 'photodetector')
+        response = self.read(self.com1)
+        if isinstance(response, str):
+            return response  # String response
+        #else:
+            #print("Received raw data:", response)
+            # Handle raw data response here, if necessary
+            
+    def change_direction(self):
+        if (self.direction): #reverse the direction
+            self.motor.set_direction(False)
+            self.direction = False
+        else:
+            self.motor.set_direction(True) #change motor's direction
+            self.direction = True
+        print("direction changed to ", self.direction)
+        
+        
     def temp_control(self):
         while True:
             self.temp_c = "0"
             while self.led_on:
                 pid = PID(1, 1, 0.2, setpoint=2.0)
-
+    
                 pid.output_limits = (-1, 0)
                 output = pid(self.temp_volts)
                 self.led.pwm_pin.duty_u16(int(65535*abs(output)))
@@ -97,46 +127,43 @@ class DataCollection:
                 self.temp_c = str(output)
                 time.sleep(5)
             pass
-        
+            
     def start_collection(self):
-        # SET FILENAME FOR PICO BACKUP
+        
         try:
+            # SET FILENAME FOR PICO BACKUP
             rtc = RTC()
             current_time = rtc.datetime()
             # Format the current date and time as a timestamp string
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
-            filename = "1550_model_data_" + timestamp + ".csv"
-            #filename = 'datasweep_Feb23.csv' # Use this to create a custom filename
-            print(filename)
+            filename = "data_backup_" + timestamp + ".csv"
+            #filenmae = 'datasweep_Feb9_1050_watertrial.' # Use this to create a custom filename
+            
             # ENABLE THE MOTOR, Set initial direction to clockwise
-            current_dir = self.direction
+            #current_dir = self.direction
             self.motor.enable_motor(True)
-            self.motor.set_direction(True)#True is CW, False is CCW
-            ##
+            self.motor.set_direction(self.direction)#True is CW, False is CCW
+            
             # OPEN (OR CREATE) THE BACKUP FILE
-            #try:
             maximum = 0
+            average = 0
             with open(filename, 'w') as file:
-                
-                for led_number in range(1, 5):  # Outer loop, (1, 4) runs three times (once per LED)
-                    #self.ADS = I2C(1, freq=400000, scl=Pin(11), sda=Pin(10))
+                for led_number in range(1, 5):  # Outer loop, (1, 5) runs three times (once per LED)
                     self.led = LED(led_number)
                     self.led_on = True
                     spectrum_started = False
                     base_voltage = 0.5
-                    for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
-                           
-                        # CHECK TO SEE IF DIRECTION CHANGED
-                        if current_dir != self.direction:
-                            self.motor.set_direction(self.direction)
-                            current_dir = self.direction
+                    
+                    #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
+                    for step_count in range(2500):    
                             
                         # COLLECT PHOTODETECTOR DATA
                         value = self.readValue(3)
-                        
-                        #print(value)
-                        #volts_data = value*(4.096*2)/(0xffff)
                         volts_data = value*(6.124*2)/(0xffff)
+                        # Print data every 100 steps
+                        average = average + volts_data # add to the running total
+                        
+                        # new
                         if volts_data > base_voltage and not spectrum_started:
                             spectrum_started = True
                             print("spectrum_started")
@@ -146,42 +173,62 @@ class DataCollection:
                             print("nextled")
                             print("spectrum_stopped")
                             break
+                        # END new
                         
                         if volts_data > maximum:
                             maximum = volts_data
-                        #collect temperature Data
-                        temp = self.readValue(self.led.adc_addr)
-                        #temp = self.readValue(1)
-                        #self.temp_volts = temp*(4.096*2)/(0xffff)
-                        self.temp_volts = temp*(6.124*2)/(0xffff)
-                        #print(self.temp_volts)
-                        # Print data every 100 steps
                         if step_count % 100 == 0:
-                            print("Photodiode: ", maximum, "\tT_PD = ", adc_voltage, "\tT_led = ", temp_volts)
+                            adc_value = self.temp_sensor.read_u16()
+                            adc_voltage = adc_value * 3.3 / 65535
+                            
+                            average = average/100
+                            
+                            value = self.readValue(2)
+                            ts_1 = value*(6.124*2)/(0xffff)
+                        
+                            value = self.readValue(1)
+                            ts_2 = value*(6.124*2)/(0xffff)
+                        
+                            value = self.readValue(0)
+                            ts_3 = value*(6.124*2)/(0xffff)
+                            
+                            #print("Photodiode: ", maximum, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
+                            print("Photodiode: ", average, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
+                            
+                            # print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
                             maximum = 0
+                            average = 0
+#                             grating_angle = self.get_grating_angle()
+#                             print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
                             
-                            
+                            # CHECK FOR STOP COMMAND FROM GROUND
+                            ground_command = self.read(self.com1)
+                            if ground_command is not None:
+                                print(ground_command)
+                                if ground_command == "STOP":
+                                    return led_number, step_count
+                                elif ground_command == "REVERSE":
+                                    self.change_direction()
+#
                         data_to_write = f"{led_number}, {step_count}, {volts_data}, {self.temp_volts}, {self.temp_c}\n"
+                        #data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
                         
-                        # UART COMS
+                        # SEND DATA TO GROUND VIA UART COMS
                         self.write(self.com1, data_to_write)
                         
                         # MOVE MOTOR ONE STEP
                         self.motor.move() # perform one step in the direction we need
-                        #grating_angle = self.get_grating_angle()
-                        #print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
-                        # CHECK FOR STOP COMMAND
-                        if self.stop == True:
-                            self.stop = False
-                            break
+                        
                     # Optional: a small delay between each outer loop iteration
-                    time.sleep(0.1)
+                    #time.sleep(0.1)
                     self.write(self.com1, "0, 0, 0\n") # Send confirmation when done with one LED
                     
                     ## JUST FOR TESTING WITH ONE LED
+                    #self.change_direction()
                     #self.motor.set_direction(False)#True is CW, False is CCW
                 
+                # Turning off the LED
                 self.led.pwm_pin.duty_u16(0)    
                 self.led_on = False
                 
@@ -197,22 +244,15 @@ class DataCollection:
                         uos.remove(filename)  # Delete the file
                         print("File deleted.")
                         break  # Exit the loop
-            
             self.motor.enable_motor(False) 
             print("One full sample complete for all LEDs")
-            
+            return led_number, step_count
+        
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
             # Get the loop number and the number of steps completed
             data_to_send = f"{led_number}, {step_count}, {volts_data}, STOPPED\n"
             self.write(self.com1, data_to_send)
             return led_number, step_count
-        
-    
-
-
-
-
-
 
 
