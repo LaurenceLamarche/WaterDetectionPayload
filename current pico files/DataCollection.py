@@ -59,8 +59,13 @@ class DataCollection:
             self.ADS.writeto(self.address, bytearray([0]))
             result = self.ADS.readfrom(self.address, 2)
             return result[0]<<8 | result[0]
-        except:
+        except Exception as e:
             #print("error reading value from ADC")
+            #don't raise this error further to not interrupt sweep more than necessary
+            timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+            err_msg = f"Failed to read ADC value, {e}, {timestamp}\n"
+            with open('err_log.txt', 'a') as file:
+                file.write(err_msg)
             return -1
     
     # UART STUFF
@@ -68,41 +73,40 @@ class DataCollection:
     def write(self, com1, message:str):
         #print(f'sending message: {message}')
         #message = message + '\n'
-        com1.write(bytes(message,'utf-8'))
+        try:
+            com1.write(bytes(message,'utf-8'))
+        except Exception as e:
+            timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+            err_msg = f"Failed to send UART message, {e}, {timestamp}\n"
+            raise Exception(err_msg)
+
 
     def read(self, com1):
-        timeout = 1000000000 # 1 second
-        start_time = time_ns()
-        current_time = start_time
-        message_end = False
-        message = ""
-        while (not message_end) and (current_time <= (start_time + timeout)):
-            current_time = time_ns()
-            if (com1.any() > 0):
-                #print(com1.read())
-                message = message + com1.read().decode('utf-8')
-                if '\n' in message:
-                    message_end = True
-                    message = message.strip('\n')
-                    # print(f'received message: {message}')
-                    return message
-        else:
-            return None
+        try:
+            timeout = 1000000000 # 1 second
+            start_time = time_ns()
+            current_time = start_time
+            message_end = False
+            message = ""
+            while (not message_end) and (current_time <= (start_time + timeout)):
+                current_time = time_ns()
+                if (com1.any() > 0):
+                    #print(com1.read())
+                    message = message + com1.read().decode('utf-8')
+                    if '\n' in message:
+                        message_end = True
+                        message = message.strip('\n')
+                        # print(f'received message: {message}')
+                        return message
+            else:
+                return None
+        except Exception as e:
+            timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+            err_msg = f"Failed to send UART message, {e}, {timestamp}\n"
+            raise Exception(err_msg)
         
     
-    def get_grating_angle(self):
-        return self.motor.get_grating_angle()
-    
-        
-    def get_photodetector_value(self):
-        #self.write(self.com1, 'photodetector')
-        response = self.read(self.com1)
-        if isinstance(response, str):
-            return response  # String response
-        #else:
-            #print("Received raw data:", response)
-            # Handle raw data response here, if necessary
-            
+    #only for test, in final version the motor will not need to change direction       
     def change_direction(self):
         if (self.direction): #reverse the direction
             self.motor.set_direction(False)
@@ -117,16 +121,36 @@ class DataCollection:
         while True:
             self.temp_c = "0"
             while self.led_on:
-                pid = PID(1, 1, 0.2, setpoint=2.0)
-    
-                pid.output_limits = (-1, 0)
-                output = pid(self.temp_volts)
-                self.led.pwm_pin.duty_u16(int(65535*abs(output)))
-                print("temp control: V: " + str(self.temp_volts) + " C: " + str(output))
-         #       self.temp_v = str(volts_data)
-                self.temp_c = str(output)
-                time.sleep(5)
+                try:
+                    pid = PID(1, 1, 0.2, setpoint=2.0)
+        
+                    pid.output_limits = (-1, 0)
+                    output = pid(self.temp_volts)
+                    self.led.pwm_pin.duty_u16(int(65535*abs(output)))
+                    print("temp control: V: " + str(self.temp_volts) + " C: " + str(output))
+             #       self.temp_v = str(volts_data)
+                    self.temp_c = str(output)
+                    time.sleep(5)
+                except Exception as e:
+                    timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+                    err_msg = f"error in TEC PWM control or PID control, {e}, {timestamp}\n"
+                    with open('err_log.csv', 'a') as file:
+                        file.write(err_msg)
             pass
+        
+    def send_err_log(self):
+        try:
+            with open('err_log.csv', mode='r') as file:
+                line = file.readline()
+                while line:
+                    self.write(self.com1, line)  # Strip whitespace and newline characters
+                    line = file.readline()
+        except FileNotFoundError:
+            print(f"File {filename} not found.")
+        except IOError as e:
+            print(f"Error reading file {filename}: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred: {e}")
             
     def start_collection(self):
         
@@ -137,10 +161,8 @@ class DataCollection:
             # Format the current date and time as a timestamp string
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             filename = "data_backup_" + timestamp + ".csv"
-            #filenmae = 'datasweep_Feb9_1050_watertrial.' # Use this to create a custom filename
             
             # ENABLE THE MOTOR, Set initial direction to clockwise
-            #current_dir = self.direction
             self.motor.enable_motor(True)
             self.motor.set_direction(self.direction)#True is CW, False is CCW
             
@@ -152,7 +174,7 @@ class DataCollection:
                     self.led = LED(led_number)
                     self.led_on = True
                     spectrum_started = False
-                    base_voltage = 0.5
+                    base_voltage = 1.3
                     
                     #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
                     for step_count in range(2500):    
@@ -162,7 +184,10 @@ class DataCollection:
                         volts_data = value*(6.124*2)/(0xffff)
                         # Print data every 100 steps
                         average = average + volts_data # add to the running total
-                        
+                        temp = self.readValue(self.led.adc_addr)
+                        #temp = self.readValue(1)
+                        #self.temp_volts = temp*(4.096*2)/(0xffff)
+                        self.temp_volts = temp*(6.124*2)/(0xffff)
                         # new
                         if volts_data > base_voltage and not spectrum_started:
                             spectrum_started = True
@@ -178,28 +203,13 @@ class DataCollection:
                         if volts_data > maximum:
                             maximum = volts_data
                         if step_count % 100 == 0:
+                            print(led_number, volts_data, base_voltage, spectrum_started, self.temp_volts, self.temp_c, self.led.adc_addr)
                             adc_value = self.temp_sensor.read_u16()
-                            adc_voltage = adc_value * 3.3 / 65535
+                            #adc_voltage = adc_value * 3.3 / 65535
                             
                             average = average/100
-                            
-                            value = self.readValue(2)
-                            ts_1 = value*(6.124*2)/(0xffff)
-                        
-                            value = self.readValue(1)
-                            ts_2 = value*(6.124*2)/(0xffff)
-                        
-                            value = self.readValue(0)
-                            ts_3 = value*(6.124*2)/(0xffff)
-                            
-                            #print("Photodiode: ", maximum, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
-                            print("Photodiode: ", average, "\tT_1 = ", ts_1, "\tT_2 = ", ts_2, "\tT_3 = ", ts_3, "\tT_PD = ", adc_voltage)
-                            
-                            # print("ADC_value = ", value, "\tADC_volts = ", maximum, "\tphotodiode_temp_value = ", adc_value, "\tphotodiode_temp_volts = ", adc_voltage)
                             maximum = 0
                             average = 0
-#                             grating_angle = self.get_grating_angle()
-#                             print(f"step_count={step_count}, grating angle is: {grating_angle}\n")
                             
                             # CHECK FOR STOP COMMAND FROM GROUND
                             ground_command = self.read(self.com1)
@@ -209,9 +219,8 @@ class DataCollection:
                                     return led_number, step_count
                                 elif ground_command == "REVERSE":
                                     self.change_direction()
-#
+    
                         data_to_write = f"{led_number}, {step_count}, {volts_data}, {self.temp_volts}, {self.temp_c}\n"
-                        #data_to_write = f"{led_number}, {step_count}, {volts_data}\n"
                         file.write(data_to_write)
                         
                         # SEND DATA TO GROUND VIA UART COMS
@@ -232,6 +241,10 @@ class DataCollection:
                 self.led.pwm_pin.duty_u16(0)    
                 self.led_on = False
                 
+                
+                self.send_err_log()
+                
+                
                 # Wait for confirmation message
                 confirmation_received = False
                 print("Data sent for 3 LEDs, waiting for reception confirmation")
@@ -242,11 +255,21 @@ class DataCollection:
                     if confirmation_message == "DATA RECEIVED": #TODO: change this
                         confirmation_received = True
                         uos.remove(filename)  # Delete the file
+                        try:
+                            with open('err_log.csv', mode='w') as file:
+                                pass
+                        except Exception as e:
+                            print("couldn't clear err_log.")
                         print("File deleted.")
                         break  # Exit the loop
             self.motor.enable_motor(False) 
             print("One full sample complete for all LEDs")
             return led_number, step_count
+        
+        
+        except Exception as e:
+            with open('err_log.csv', 'a') as file:
+                file.write(e)
         
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
@@ -254,5 +277,3 @@ class DataCollection:
             data_to_send = f"{led_number}, {step_count}, {volts_data}, STOPPED\n"
             self.write(self.com1, data_to_send)
             return led_number, step_count
-
-
