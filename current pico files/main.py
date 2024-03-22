@@ -39,28 +39,41 @@ pwm_TEC.duty_u16(0)
 
 # UART 
 def write(com1, message:str):
-    print(f'sending message: {message}')
-    message = message + '\n'
-    com1.write(bytes(message,'utf-8'))
+    try:
+        print(f'sending message: {message}')
+        message = message + '\n'
+        com1.write(bytes(message,'utf-8'))
+    except Exception as e:
+        timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+        err_msg = f"failed to write to UART in main, {e}, {timestamp}\n"
+        with open('err_log.csv', 'a') as file:
+            file.write(err_msg)
 
 def read(com1):
-    timeout = 1000000000 # 1 second
-    start_time = time.time_ns()
-    current_time = start_time
-    message_end = False
-    message = ""
-    while (not message_end) and (current_time <= (start_time + timeout)):
-        current_time = time.time_ns()
-        if (com1.any() > 0):
-            #print(com1.read())
-            message = message + com1.read().decode('utf-8')
-            if '\n' in message:
-                message_end = True
-                message = message.strip('\n')
-                # print(f'received message: {message}')
-                return message
-    else:
-        return None
+    try:
+        timeout = 1000000000 # 1 second
+        start_time = time.time_ns()
+        current_time = start_time
+        message_end = False
+        message = ""
+        while (not message_end) and (current_time <= (start_time + timeout)):
+            current_time = time.time_ns()
+            if (com1.any() > 0):
+                #print(com1.read())
+                message = message + com1.read().decode('utf-8')
+                if '\n' in message:
+                    message_end = True
+                    message = message.strip('\n')
+                    # print(f'received message: {message}')
+                    return message
+        else:
+            return None
+
+    except Exception as e:
+        timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+        err_msg = f"failed to read from UART in main, {e}, {timestamp}\n"
+        with open('err_log.csv', 'a') as file:
+            file.write(err_msg)
 
 # TODO: Verify if we want this here or in the loop
 a = DataCollection(com1)
@@ -69,8 +82,8 @@ a = DataCollection(com1)
 
 try:
     while True:
-        #ground_command = read(com1)
-        ground_command = "MEASURE" # JUST FOR TESTING
+        ground_command = read(com1)
+        #ground_command = "MEASURE" # JUST FOR TESTING
         #print(ground_command)
         
         if ground_command == "MEASURE":
