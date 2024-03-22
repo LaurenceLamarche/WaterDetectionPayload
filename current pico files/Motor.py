@@ -1,6 +1,5 @@
 import machine
 import time
-# March 14
 
 class Encoder:
     def __init__(self, clk_pin, dt_pin, cpr):
@@ -13,23 +12,27 @@ class Encoder:
         self.cpr = cpr
 
     def update(self):
-        clk_state = self.clk_pin.value()
-        dt_state = self.dt_pin.value()
-#         print("entered udpate function")
-#         print("clk_state = ", clk_state)
-#         print("dt_state = ", dt_state)
-#        print("clk_last_state = ", self.clk_last_state)
-        #if clk_state != self.clk_last_state:
-#            print("first check done")
-        if dt_state != clk_state:
-#                print("second check done")
-            self.counter += 1
-            #else:
-                #self.counter -= 1
-            self.clk_last_state = clk_state
-        #print("grating angle is:", self.get_angle())
-        #print("counter is: ", self.counter)
-        return self.counter
+        try:
+            clk_state = self.clk_pin.value()
+            dt_state = self.dt_pin.value()
+    #         print("entered udpate function")
+    #         print("clk_state = ", clk_state)
+    #         print("dt_state = ", dt_state)
+    #        print("clk_last_state = ", self.clk_last_state)
+            #if clk_state != self.clk_last_state:
+    #            print("first check done")
+            if dt_state != clk_state:
+    #                print("second check done")
+                self.counter += 1
+                #else:
+                    #self.counter -= 1
+                self.clk_last_state = clk_state
+            #print("grating angle is:", self.get_angle())
+            #print("counter is: ", self.counter)
+            return self.counter
+        except Exception as e:
+            #write to err_log.csv if needed
+            print("encoder didn't work")
 
     def get_count(self):
         return self.counter
@@ -108,14 +111,18 @@ class Motor:
         self.enable_motor(False)
 
     def move(self):
-        # we use the fixed delay
-        #print("Performing move...")
-        self.step_pin.on()
-        time.sleep(self.delay/2)  # ensure it doesn't move so fast
-        self.step_pin.off()
-        #time.sleep(self.delay/2)  
-        self.encoder.update()
-
+        try:
+            # we use the fixed delay
+            #print("Performing move...")
+            self.step_pin.on()
+            time.sleep(self.delay/2)  # ensure it doesn't move so fast
+            self.step_pin.off()
+            #time.sleep(self.delay/2)  
+            self.encoder.update()
+        except Exception as e:
+            timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
+            err_msg = f"Motor failed to move a step, {e}, {timestamp}\n"
+            raise Exception(err_msg)
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?
 
 ##Use this for testing
@@ -126,3 +133,4 @@ class Motor:
     #motor.move_half_turn(20000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.
 #    motor.move()
 #    motor.get_grating_angle()
+
