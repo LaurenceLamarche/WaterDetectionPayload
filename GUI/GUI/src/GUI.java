@@ -1,3 +1,20 @@
+/**
+ * GUI.java
+ *
+ * This code is meant to reproduce the OBC (On Board Computer) that will board the PEEKBot lunar rover.
+ * This GUI controls the Water Detection Payload instrument
+ * that was designed by the Carleton University CAPSTONE Team, consisting of:
+ * Vlad Artychshuk, Nicholas Ficele, Declan McCoy, Laurence Lamarche-Cliche and Matthew Walsh
+ * The main contacts regarding the code are:
+ * Laurence (this GUI & the ground data-processing software) laurence.lamarchecliche@gmail.com
+ * Matthew (Embedded Programming - code on the instrument)
+ *
+ * @author Laurence Lamarche-Cliche
+ * Software Engineering Student
+ * Carleton University
+ * @version 1.0, March 18, 2024
+ */
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -26,7 +43,7 @@ public class GUI {
             stopButton.setBackground(stopButton.getBackground().darker()); // Make button slightly darker when clicked
             new Thread(() -> {
                 try {
-                    currentProcess = Runtime.getRuntime().exec("python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/start_script.py stop");
+                    currentProcess = Runtime.getRuntime().exec("python3.11 scripts/start_script.py stop");
                     BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream()));
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -46,7 +63,7 @@ public class GUI {
             changeDirectionButton.setBackground(changeDirectionButton.getBackground().darker()); // Make button slightly darker when clicked
             new Thread(() -> {
                 try {
-                    currentProcess = Runtime.getRuntime().exec("python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/start_script.py reverse");
+                    currentProcess = Runtime.getRuntime().exec("python3.11 scripts/start_script.py reverse");
                     BufferedReader reader = new BufferedReader(new InputStreamReader(currentProcess.getInputStream()));
                     String line;
                     while ((line = reader.readLine()) != null) {
@@ -90,7 +107,7 @@ public class GUI {
         });
     }
 
-    private static void addPlotButtonListener(JButton plotButton, JFrame frame) {
+    private static void addPlotButtonListener(JButton plotButton, JFrame frame, String plotScriptPath) {
         plotButton.addActionListener(e -> {
             // Visual feedback for button click
             plotButton.setBackground(plotButton.getBackground().darker()); // Make button slightly darker when clicked
@@ -102,7 +119,7 @@ public class GUI {
                 panel.add(descriptionLabel);
 
                 JButton okButton = new JButton("OK");
-                okButton.addActionListener(event -> executePlottingScript(plotButton));
+                okButton.addActionListener(event -> executePlottingScript(plotButton, plotScriptPath));
 
                 JButton displayDataButton = new JButton("Display Model Data");
                 displayDataButton.addActionListener(event -> displayModelData(frame));
@@ -118,10 +135,10 @@ public class GUI {
         });
     }
 
-    private static void executePlottingScript(JButton plotButton) {
+    private static void executePlottingScript(JButton plotButton, String plotScriptPath) {
         new Thread(() -> {
             try {
-                Process process = Runtime.getRuntime().exec("python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/data_processing.py --files 1");
+                Process process = Runtime.getRuntime().exec(plotScriptPath);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
                 String line;
                 while ((line = reader.readLine()) != null) {
@@ -185,14 +202,15 @@ public class GUI {
         //reverseMotorDirectionButton.setVisible(false); // Initially invisible
 
         // Refactored method to add action listeners
-        String startScriptPath = "python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/receive_script.py";
-        String sleepScriptPath = "python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/start_script.py sleep";
-        String plotScriptPath = "python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/data_processing.py --files 1";
+//        String startScriptPath = "python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/receive_script.py";
+        String startScriptPath = "python3.11 scripts/receive_script.py";
+        String sleepScriptPath = "python3.11 scripts/start_script.py sleep";
+        String plotScriptPath = "python3.11 scripts/data_processing.py --files 1";
 
         addActionButtonListeners(startCollectionButton, frame, startScriptPath, outputTextArea);
         addActionButtonListeners(sleepButton, frame, sleepScriptPath, outputTextArea);
         // Custom action for plotButton if necessary
-        addPlotButtonListener(plotButton, frame);
+        addPlotButtonListener(plotButton, frame, plotScriptPath);
         addStopButtonListeners(stopDataCollectionButton, reverseMotorDirectionButton, frame, outputTextArea);
 
         buttonPanel.add(startCollectionButton);
