@@ -1,4 +1,5 @@
-from machine import PWM, Pin
+from machine import PWM, Pin, RTC
+import time
 class LED:
     def __init__(self, led_num):
         try:
@@ -33,7 +34,10 @@ class LED:
                 self.pwm_pin.duty_u16(65535)
                 self.adc_addr = 0
         except Exception as e:
+            rtc = RTC()
+            current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Failed to initialize led, {e}, {timestamp}\n"
             raise Exception(err_msg)
+
 

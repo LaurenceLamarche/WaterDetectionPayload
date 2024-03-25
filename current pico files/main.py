@@ -7,7 +7,7 @@
 
 import time
 import utime
-from machine import Pin, I2C, UART, PWM
+from machine import Pin, I2C, UART, PWM, RTC
 #from DataCollection import DataCollection
 from DataCollection import DataCollection
 import _thread
@@ -44,6 +44,8 @@ def write(com1, message:str):
         message = message + '\n'
         com1.write(bytes(message,'utf-8'))
     except Exception as e:
+        rtc = RTC()
+        current_time = rtc.datetime()
         timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
         err_msg = f"failed to write to UART in main, {e}, {timestamp}\n"
         with open('err_log.csv', 'a') as file:
@@ -70,6 +72,8 @@ def read(com1):
             return None
 
     except Exception as e:
+        rtc = RTC()
+        current_time = rtc.datetime()
         timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
         err_msg = f"failed to read from UART in main, {e}, {timestamp}\n"
         with open('err_log.csv', 'a') as file:
@@ -123,7 +127,7 @@ try:
                 print("Error sending sleep confirmation")
         
         elif ground_command == "STOP":
-            print("Received SLEEP command from ground, but Data Collection not running")
+            print("Received STOP command from ground, but Data Collection not running")
         
         elif ground_command == "REVERSE":
             print("Received REVERSE command from ground, direction will be changed for the next data collection loop")
@@ -141,6 +145,7 @@ try:
 except KeyboardInterrupt:
     if (com1):
         com1.deinit() #close the com port when interrupted
+
 
 
 

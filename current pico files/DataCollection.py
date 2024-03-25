@@ -62,6 +62,8 @@ class DataCollection:
         except Exception as e:
             #print("error reading value from ADC")
             #don't raise this error further to not interrupt sweep more than necessary
+            rtc = RTC()
+            current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Failed to read ADC value, {e}, {timestamp}\n"
             with open('err_log.txt', 'a') as file:
@@ -76,9 +78,11 @@ class DataCollection:
         try:
             com1.write(bytes(message,'utf-8'))
         except Exception as e:
+            rtc = RTC()
+            current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Failed to send UART message, {e}, {timestamp}\n"
-            raise Exception(err_msg)
+            raise Exception(err_msg) 
 
 
     def read(self, com1):
@@ -101,6 +105,8 @@ class DataCollection:
             else:
                 return None
         except Exception as e:
+            rtc = RTC()
+            current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Failed to send UART message, {e}, {timestamp}\n"
             raise Exception(err_msg)
@@ -132,6 +138,8 @@ class DataCollection:
                     self.temp_c = str(output)
                     time.sleep(5)
                 except Exception as e:
+                    rtc = RTC()
+                    current_time = rtc.datetime()
                     timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
                     err_msg = f"error in TEC PWM control or PID control, {e}, {timestamp}\n"
                     with open('err_log.csv', 'a') as file:
@@ -269,7 +277,10 @@ class DataCollection:
         
         except Exception as e:
             with open('err_log.csv', 'a') as file:
-                file.write(e)
+                #file.write(e)
+                error_msg = str(e)
+                file.write(error_msg)
+            return led_number, step_count
         
         except KeyboardInterrupt:
             # If data collection is interrupted midway, we have to know where we are
@@ -277,3 +288,4 @@ class DataCollection:
             data_to_send = f"{led_number}, {step_count}, {volts_data}, STOPPED\n"
             self.write(self.com1, data_to_send)
             return led_number, step_count
+

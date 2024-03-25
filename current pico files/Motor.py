@@ -1,5 +1,6 @@
 import machine
 import time
+from machine import RTC
 
 class Encoder:
     def __init__(self, clk_pin, dt_pin, cpr):
@@ -120,6 +121,8 @@ class Motor:
             #time.sleep(self.delay/2)  
             self.encoder.update()
         except Exception as e:
+            rtc = RTC()
+            current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Motor failed to move a step, {e}, {timestamp}\n"
             raise Exception(err_msg)
@@ -133,4 +136,5 @@ class Motor:
     #motor.move_half_turn(20000, 120) #half a full turn is 10000 steps, 120seconds is 2 minutes.
 #    motor.move()
 #    motor.get_grating_angle()
+
 

@@ -1,3 +1,5 @@
+#March 14
+
 import machine
 import time
 
@@ -112,7 +114,7 @@ class Motor:
         self.step_pin.on()
         time.sleep(self.delay/2)  # ensure it doesn't move so fast
         self.step_pin.off()
-        time.sleep(self.delay/2)  
+        #time.sleep(self.delay/2)  
         self.encoder.update()
 
         #TODO: return true if move was successful. So, motor has to be aware of its position? Does it?

@@ -9,7 +9,8 @@ class DataCollection:
     def __init__(self, com):
         # Initialize Motor instance
         self.motor = Motor()
-        self.direction = False #counterclockwise
+        #self.direction = False #counterclockwise
+        self.direction = True #clockwise
         self.stop = False
         
         # UART pico communication
@@ -95,8 +96,14 @@ class DataCollection:
             # Handle raw data response here, if necessary
             
     def change_direction(self):
-        self.direction = not self.direction #reverse the direction
-        self.motor.set_direction(self.direction) #change motor's direction
+        if (self.direction): #reverse the direction
+            self.motor.set_direction(False)
+            self.direction = False
+        else:
+            self.motor.set_direction(True) #change motor's direction
+            self.direction = True
+        print("direction changed to ", self.direction)
+        
             
     def start_collection(self):
         
@@ -112,16 +119,16 @@ class DataCollection:
             # ENABLE THE MOTOR, Set initial direction to clockwise
             #current_dir = self.direction
             self.motor.enable_motor(True)
-            #self.motor.set_direction(True)#True is CW, False is CCW
+            self.motor.set_direction(self.direction)#True is CW, False is CCW
             
             # OPEN (OR CREATE) THE BACKUP FILE
             maximum = 0
             average = 0
             with open(filename, 'w') as file:
-                for led_number in range(1, 2):  # Outer loop, (1, 4) runs three times (once per LED)
+                for led_number in range(1, 3):  # Outer loop, (1, 4) runs three times (once per LED)
                     
                     #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
-                    for step_count in range(1000):    
+                    for step_count in range(2500):    
                             
                         # COLLECT PHOTODETECTOR DATA
                         value = self.readValue(3)
@@ -171,13 +178,14 @@ class DataCollection:
                         self.write(self.com1, data_to_write)
                         
                         # MOVE MOTOR ONE STEP
-                        #self.motor.move() # perform one step in the direction we need
+                        self.motor.move() # perform one step in the direction we need
                         
                     # Optional: a small delay between each outer loop iteration
-                    time.sleep(0.1)
+                    #time.sleep(0.1)
                     self.write(self.com1, "0, 0, 0\n") # Send confirmation when done with one LED
                     
                     ## JUST FOR TESTING WITH ONE LED
+                    self.change_direction()
                     #self.motor.set_direction(False)#True is CW, False is CCW
                     
                 # Wait for confirmation message

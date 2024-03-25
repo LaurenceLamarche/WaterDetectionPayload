@@ -22,7 +22,7 @@ pwm_max = 2**16 - 1
 # 1200
 LED1200_pin = Pin(11)
 pwm_LED1200 = PWM(LED1200_pin, freq=400) # Initialize PWM with a frequency of 1000Hz
-pwm_LED1200.duty_u16(0) 
+pwm_LED1200.duty_u16(pwm_max) 
 # 1050
 LED1050_pin = Pin(12)  # Replace 4 with the GPIO pin number you want to use
 pwm_LED1 = PWM(LED1050_pin, freq=400)
@@ -30,7 +30,7 @@ pwm_LED1.duty_u16(0)
 # 1550
 LED1550_pin = Pin(13)  # Replace 4 with the GPIO pin number you want to use
 pwm_LED1550 = PWM(LED1550_pin, freq=400)
-pwm_LED1550.duty_u16(0)
+pwm_LED1550.duty_u16(pwm_max)
 # TEC
 TEC_pin = Pin(14)  
 pwm_TEC = PWM(TEC_pin, freq=400)
@@ -68,7 +68,7 @@ def read(com1):
 # TODO: Verify if we want this here or in the loop
 a = DataCollection(com1)
 # TODO: JUST TESTING, remove this
-#a.start_collection()
+a.start_collection()
 
 
 measure = False
