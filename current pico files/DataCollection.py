@@ -66,7 +66,7 @@ class DataCollection:
             current_time = rtc.datetime()
             timestamp = "{:04d}-{:02d}-{:02d}_{:02d}-{:02d}-{:02d}".format(*current_time)
             err_msg = f"Failed to read ADC value, {e}, {timestamp}\n"
-            with open('err_log.txt', 'a') as file:
+            with open('err_log.csv', 'a') as file:
                 file.write(err_msg)
             return -1
     
