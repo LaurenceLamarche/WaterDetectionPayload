@@ -97,7 +97,7 @@ try:
                     print(f"LED {led_count + 1} done")
                     sys.stdout.flush() # ADD THIS AFTER ANY PRINT STATEMENT TO AVOID A BUFFER TOO BIG 
                     led_count += 1
-                    if led_count == 1: ## TODO: FOR TESTING WITH 1 LED, DOUBLE SWEEP. Eventally, change back to 3
+                    if led_count == 2: ## TODO: FOR TESTING WITH 1 LED, DOUBLE SWEEP. Eventally, change back to 3
                         all_data_received = True
                 else:
                     file.write(data + "\n")

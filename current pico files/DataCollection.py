@@ -185,7 +185,7 @@ class DataCollection:
                     base_voltage = 1.3
                     
                     #for step_count in range(6227):  # Inner loop, runs 4000 times for each outer loop
-                    for step_count in range(2500):    
+                    for step_count in range(10):    
                             
                         # COLLECT PHOTODETECTOR DATA
                         value = self.readValue(3)
@@ -249,7 +249,7 @@ class DataCollection:
                 self.led.pwm_pin.duty_u16(0)    
                 self.led_on = False
                 
-                
+                # Sending the error log on the ground before deleting it
                 self.send_err_log()
                 
                 
@@ -260,7 +260,7 @@ class DataCollection:
                     confirmation_message = self.read(self.com1)
                     print("received some confirmation message: ")
                     print(confirmation_message)
-                    if confirmation_message == "DATA RECEIVED": #TODO: change this
+                    if confirmation_message == "RECEIVED": 
                         confirmation_received = True
                         uos.remove(filename)  # Delete the file
                         try:
