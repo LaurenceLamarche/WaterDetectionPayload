@@ -186,6 +186,7 @@ print("Running data reception script...")
 sys.stdout.flush()
 
 # Communicate with the main loop on the PICO
+# This starts the data collection loop
 started = False
 while not started:
     try:
@@ -220,6 +221,9 @@ while not started:
     time.sleep(0.1)
 
 # Main data collection loop
+# This is receiving data from the DataCollection.py file on the pico
+# Which has now control of the UART port
+
 try:
     print("Listening for data from PICO...")
     sys.stdout.flush()
@@ -253,9 +257,33 @@ try:
             # Write data to the file
             with open(current_filename, 'a') as file:
                 file.write(data + "\n")
+    
+    # We exit this loop once all data has been received (we see "0, 0, 0" for the fourth time)
+    # Now, we need to get the error log from the PICO
+    while not error_log_received:
+        if ser.in_waiting > 0:
+            data = ser.readline().decode('utf-8').rstrip()
+            print("data")
+            sys.stdout.flush()
+            # Check for the end of data for an LED
+            if data == "DONE":
+                print(f"Error log received")
+                sys.stdout.flush()
+                error_log_received = True
+            continue # Do not write this line to the file
 
-    # Confirmation back to PICO
-    print("All LED data received, sending confirmation to PICO...")
+            # Open a new file on the first data received
+            if not file_opened:
+                timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                current_error_filename = os.path.join(error_directory, f"error_log_{timestamp}.csv")
+                error_file_opened = True
+
+            # Write data to the file
+            with open(current_error_filename, 'a') as file:
+                file.write(data + "\n")
+
+    # Send confirmation of reception of data back to PICO
+    print("All LED data and error log received, sending confirmation to PICO...")
     sys.stdout.flush()
     time.sleep(3)
     ser.write(b"RECEIVED\n")

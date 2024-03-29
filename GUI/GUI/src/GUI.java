@@ -5,9 +5,9 @@
  * This GUI controls the Water Detection Payload instrument
  * that was designed by the Carleton University CAPSTONE Team, consisting of:
  * Vlad Artychshuk, Nicholas Ficele, Declan McCoy, Laurence Lamarche-Cliche and Matthew Walsh
- * The main contacts regarding the code are:
+ * The main contacts regarding this code are:
  * Laurence (this GUI & the ground data-processing software) laurence.lamarchecliche@gmail.com
- * Matthew (Embedded Programming - code on the instrument)
+ * Matthew (Embedded Programming - code on the instrument) matthewpwalsh@cmail.carleton.ca
  *
  * @author Laurence Lamarche-Cliche
  * Software Engineering Student
@@ -36,7 +36,7 @@ public class GUI {
     }
 
     // Add action listeners for stop and change direction buttons
-    private static void addStopButtonListeners(JButton stopButton, JButton changeDirectionButton, JFrame frame, JTextArea outputTextArea) {
+    private static void addStopButtonListeners(JButton stopButton, JButton pauseButton, JFrame frame, JTextArea outputTextArea) {
         stopButton.addActionListener(e -> {
             stopScript();
             // Visual feedback for button click
@@ -58,9 +58,9 @@ public class GUI {
                 }
             }).start();
         });
-        changeDirectionButton.addActionListener(e -> {
-            //stopScript(); we do NOT stop the running script because data collection must keep going.
-            changeDirectionButton.setBackground(changeDirectionButton.getBackground().darker()); // Make button slightly darker when clicked
+        pauseButton.addActionListener(e -> {
+            // We do NOT stop the running script because data collection must keep going.
+            pauseButton.setBackground(pauseButton.getBackground().darker()); // Make button slightly darker when clicked
             new Thread(() -> {
                 try {
                     currentProcess = Runtime.getRuntime().exec("python3.11 scripts/start_script.py reverse");
@@ -74,7 +74,7 @@ public class GUI {
                     ex.printStackTrace();
                     SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(frame, "Error starting script: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE));
                 } finally {
-                    SwingUtilities.invokeLater(() -> changeDirectionButton.setBackground(changeDirectionButton.getBackground().brighter())); // Reset button color after action
+                    SwingUtilities.invokeLater(() -> pauseButton.setBackground(pauseButton.getBackground().brighter())); // Reset button color after action
                 }
             }).start();
         });
@@ -198,11 +198,9 @@ public class GUI {
         JButton stopDataCollectionButton = createButton("Stop Data Collection", new Color(255, 102, 102));
         //stopDataCollectionButton.setVisible(false); // Initially invisible
 
-        JButton reverseMotorDirectionButton = createButton("Change Direction", new Color(102, 204, 153)); // Pale green);
+        JButton pauseDataCollectionButton = createButton("Pause Data Collection", new Color(102, 204, 153)); // Pale green);
         //reverseMotorDirectionButton.setVisible(false); // Initially invisible
 
-        // Refactored method to add action listeners
-//        String startScriptPath = "python3.11 /Users/lola/Desktop/CU/CAPSTONE23-24/WaterDetectionPayload/WaterDetectionPayload/DATA_PROCESSING/receive_script.py";
         String startScriptPath = "python3.11 scripts/receive_script.py";
         String sleepScriptPath = "python3.11 scripts/start_script.py sleep";
         String plotScriptPath = "python3.11 scripts/data_processing.py --files 1";
@@ -211,13 +209,14 @@ public class GUI {
         addActionButtonListeners(sleepButton, frame, sleepScriptPath, outputTextArea);
         // Custom action for plotButton if necessary
         addPlotButtonListener(plotButton, frame, plotScriptPath);
-        addStopButtonListeners(stopDataCollectionButton, reverseMotorDirectionButton, frame, outputTextArea);
+        addStopButtonListeners(stopDataCollectionButton, pauseDataCollectionButton, frame, outputTextArea);
 
         buttonPanel.add(startCollectionButton);
         buttonPanel.add(sleepButton);
         buttonPanel.add(plotButton);
         buttonPanel2.add(stopDataCollectionButton);
-        buttonPanel2.add(reverseMotorDirectionButton);
+        // If you ever want to implement a "pause" command, you can add this button here and implement the right logic
+        //buttonPanel2.add(pauseDataCollectionButton);
 
         constraints.gridx = 0;
         constraints.gridy = 1;
