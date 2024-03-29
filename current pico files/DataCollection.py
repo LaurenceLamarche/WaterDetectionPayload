@@ -149,6 +149,7 @@ class DataCollection:
     def send_err_log(self):
         try:
             with open('err_log.csv', mode='r') as file:
+                file.write("DONE\n")
                 line = file.readline()
                 while line:
                     self.write(self.com1, line)  # Strip whitespace and newline characters
