@@ -5,6 +5,13 @@ Under the supervision of Prof. Winnie Ye, Carleton University and Guillaume Lavi
 
 ## Current State of the Software 
 
+The following represent the current state of the software, including the ground and the flight components: 
+
+![Software Overview](Updated_flowchart_Peekbot_Payload_colours-Software-Overview.drawio.png)
+
+And, the following flowchart is illustrating the instruments' operation: 
+
+
 
 # Instructions for Using the Produced Design
 
